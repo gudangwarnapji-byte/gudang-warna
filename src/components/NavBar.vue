@@ -95,7 +95,7 @@ const isAdmin = computed(() => currentRole.value === 'admin')
 const bukaMutasi     = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
 const bukaBulanan    = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
 const bukaRekapJenis = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
-const bukaAddModal   = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
+
 
 const getTipeGrade = kode => {
   const k = (kode || '').toUpperCase()
