@@ -35,6 +35,8 @@
 <TransModal v-if="showTransModal" @close="activeTrans = null" />
       <HistDrawer v-show="showHistDrawer" @close="activeHistId = ''" />
       <DailyModal v-if="showDailyModal" @close="showDailyModal = false" />
+      <MutasiModal v-if="showMutasiModal" @close="showMutasiModal = false" />
+      <BulananModal v-if="showBulananModal" @close="showBulananModal = false" />
       <AddModal v-if="showAddModal" @close="showAddModal = false" />
       <BatchModal v-if="showBatchModal" @close="showBatchModal = false" />
       <EditTransModal
@@ -55,6 +57,10 @@ import { useTrans, activeTrans } from './composables/useTrans'
 import { useHist, activeHistId } from './composables/useHist'
 import DailyModal from './components/modals/DailyModal.vue'
 import { useDaily, showDailyModal } from './composables/useDaily'
+import MutasiModal from './components/modals/MutasiModal.vue'
+import { useMutasi, showMutasiModal } from './composables/useMutasi'
+import BulananModal from './components/modals/BulananModal.vue'
+import { useBulanan, showBulananModal } from './composables/useBulanan'
 import AddModal from './components/modals/AddModal.vue'
 import { showAddModal } from './composables/useAdd'
 import BatchModal from './components/modals/BatchModal.vue'
