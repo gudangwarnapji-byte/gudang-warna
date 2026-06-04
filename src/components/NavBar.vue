@@ -89,6 +89,8 @@ import { db } from '../firebase'
 import { useAuth, user, currentRole } from '../composables/useAuth'
 import { useStok, dbStok } from '../composables/useStok'
 import { useDaily } from '../composables/useDaily'
+import { useMutasi } from '../composables/useMutasi'
+import { useBulanan } from '../composables/useBulanan'
 import { useAdd, showAddModal } from '../composables/useAdd'
 import { useBatch, showBatchModal } from '../composables/useBatch'
 const { bukaBatch } = useBatch()
@@ -96,11 +98,11 @@ const { bukaAddModal } = useAdd()
 const { doLogout } = useAuth()
 const { refreshData } = useStok()
 const { bukaDaily } = useDaily()
+const { bukaMutasi } = useMutasi()
+const { bukaBulanan } = useBulanan()
 
 const isAdmin = computed(() => currentRole.value === 'admin')
 
-const bukaMutasi     = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
-const bukaBulanan    = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
 const bukaRekapJenis = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
 
 
