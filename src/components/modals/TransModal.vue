@@ -80,8 +80,8 @@
 
 <script setup>
 import { ref, computed, nextTick, watch } from 'vue'
-import { useStok } from '../composables/useStok'
-import { activeTrans } from '../composables/useTrans'
+import { useStok } from '../../composables/useStok'
+import { activeTrans } from '../../composables/useTrans'
 
 const emit = defineEmits(['close'])
 const { kirimTransaksi } = useStok()
