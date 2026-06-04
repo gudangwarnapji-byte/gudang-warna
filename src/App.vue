@@ -36,6 +36,7 @@
       <HistDrawer v-show="showHistDrawer" @close="activeHistId = ''" />
       <DailyModal v-if="showDailyModal" @close="showDailyModal = false" />
       <AddModal v-if="showAddModal" @close="showAddModal = false" />
+      <BatchModal v-if="showBatchModal" @close="showBatchModal = false" />
     </template>
   </div>
 </template>
@@ -51,6 +52,8 @@ import DailyModal from './components/modals/DailyModal.vue'
 import { useDaily, showDailyModal } from './composables/useDaily'
 import AddModal from './components/modals/AddModal.vue'
 import { showAddModal } from './composables/useAdd'
+import BatchModal from './components/modals/BatchModal.vue'
+import { showBatchModal } from './composables/useBatch'
   
 import LoginView from './components/LoginView.vue'
 import NavBar from './components/NavBar.vue'
