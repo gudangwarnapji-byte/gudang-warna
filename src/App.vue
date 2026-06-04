@@ -32,8 +32,8 @@
           <h5>Data Kosong / Tidak Ditemukan</h5>
         </div>
       </div>
-      <TransModal v-if="showTransModal" @close="activeTrans = null" />
-      <HistDrawer v-if="showHistDrawer" @close="activeHistId = ''" />
+<TransModal v-if="showTransModal" @close="activeTrans = null" />
+<HistDrawer v-show="showHistDrawer" @close="activeHistId = ''" />
     </template>
   </div>
 </template>
