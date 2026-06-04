@@ -13,14 +13,20 @@
           </div>
         </div>
       </a>
-      <div class="d-flex align-items-center gap-2">
-        <img v-if="user?.photoURL" :src="user.photoURL" class="user-avatar">
-        <button class="btn btn-sm btn-danger rounded-circle"
-                style="width:32px;height:32px;padding:0"
-                @click="doLogout">
-          <i class="fas fa-power-off"></i>
-        </button>
-      </div>
+<div class="d-flex align-items-center gap-2">
+  <button
+    class="btn btn-sm btn-info text-white fw-bold rounded-pill px-3 shadow-sm"
+    @click="bukaDaily"
+  >
+    <i class="fas fa-calendar-day me-1"></i> Rekap
+  </button>
+  <img v-if="user?.photoURL" :src="user.photoURL" class="user-avatar">
+  <button class="btn btn-sm btn-danger rounded-circle"
+          style="width:32px;height:32px;padding:0"
+          @click="doLogout">
+    <i class="fas fa-power-off"></i>
+  </button>
+</div>
     </div>
   </nav>
 </template>
@@ -30,6 +36,8 @@ import { computed } from 'vue'
 import { useAuth, user, currentRole } from '../composables/useAuth'
 const { doLogout } = useAuth()
 const isAdmin = computed(() => currentRole.value === 'admin')
+import { useDaily } from '../composables/useDaily'
+const { bukaDaily } = useDaily()
 </script>
 
 <style scoped>
