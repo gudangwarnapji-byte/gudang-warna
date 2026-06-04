@@ -4,10 +4,8 @@ export const activeHistId = ref('')
 
 export function useHist() {
   const bukaRiwayat = (id) => {
+    console.log('bukaRiwayat dipanggil:', id)  // ← tambah ini
     activeHistId.value = id
-  }
-  const tutupRiwayat = () => {
-    activeHistId.value = ''
   }
   return { bukaRiwayat, tutupRiwayat }
 }
