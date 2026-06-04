@@ -78,7 +78,9 @@ initAuth(user => {
 
 // Handler emit dari CardItem
 const onTransaksi = (tipe, item) => bukaTransaksi(tipe, item)
-const onRiwayat   = (id) => bukaRiwayat(id)
+const onRiwayat = (id) => {
+  console.log('onRiwayat dipanggil:', id)  // ← tambah ini
+  bukaRiwayat(id)
 const onLokasi    = (id) => {
   if (currentRole.value !== 'admin') return
   const item = filteredItems.value.find(x => x.idUnik === id)
