@@ -1,21 +1,17 @@
 <template>
   <div>
-    <!-- OFFLINE BADGE -->
     <div v-if="isOffline" class="offline-badge">
       <i class="fas fa-wifi-slash me-2"></i>
       KONEKSI TERPUTUS - Data akan disinkronkan otomatis saat sinyal kembali.
     </div>
 
-    <!-- LOGIN -->
     <LoginView v-if="!authReady || !currentUser" />
 
-    <!-- LOADING -->
     <div v-else-if="loading" class="loading-overlay">
       <div class="spinner-border text-primary mb-3"></div>
       <h5 class="fw-bold text-primary">Sinkronisasi Data...</h5>
     </div>
 
-    <!-- MAIN APP -->
     <template v-else>
       <NavBar />
       <div class="container">
@@ -26,7 +22,7 @@
             :key="item.idUnik"
             :item="item"
             :velocity="itemVelocity[item.idUnik]"
-            :role="currentRole"
+            :role="currentRole.value"
             @transaksi="bukaTransaksi"
             @riwayat="bukaRiwayat"
             @lokasi="bukaLokasi"
@@ -37,16 +33,16 @@
         </div>
       </div>
 
-      <!-- MODALS & DRAWER -->
-      <TransModal v-if="showTransModal" @close="showTransModal = false" />
-      <HistDrawer v-if="showHistDrawer" @close="showHistDrawer = false" />
+      <TransModal v-if="showTransModal" @close="activeTrans.value = null" />
+      <HistDrawer v-if="showHistDrawer" @close="activeHistId.value = ''" />
     </template>
   </div>
 </template>
 
+<script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useAuth } from './composables/useAuth'
-import { useStok, dbStok, itemVelocity, loading } from './composables/useStok'
+import { useAuth, currentRole } from './composables/useAuth'
+import { useStok, itemVelocity, loading } from './composables/useStok'
 import { filteredItems } from './composables/useFilter'
 import { useTrans, activeTrans } from './composables/useTrans'
 import { useHist, activeHistId } from './composables/useHist'
@@ -71,7 +67,6 @@ const itemsToShow = ref(30)
 const visibleItems = computed(() =>
   filteredItems.value.slice(0, itemsToShow.value)
 )
-
 const showTransModal = computed(() => !!activeTrans.value)
 const showHistDrawer = computed(() => !!activeHistId.value)
 
@@ -86,7 +81,7 @@ const handleOnline  = () => isOffline.value = false
 
 onMounted(() => {
   window.addEventListener('offline', handleOffline)
-  window.addEventListener('online', handleOnline)
+  window.addEventListener('online',  handleOnline)
   window.addEventListener('scroll', () => {
     if (window.scrollY + window.innerHeight > document.body.scrollHeight - 250) {
       if (itemsToShow.value < filteredItems.value.length)
@@ -97,6 +92,24 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('offline', handleOffline)
-  window.removeEventListener('online', handleOnline)
+  window.removeEventListener('online',  handleOnline)
 })
+
+const bukaLokasi = (id) => {}
+</script>
+
+<style>
+:root { --primary: #1e3c72; --secondary: #2a5298; --bg: #f4f6f9; }
+body { background: var(--bg); font-family: 'Inter', sans-serif; padding-bottom: 80px; }
+.offline-badge {
+  position: fixed; top: 0; left: 0; width: 100%;
+  background: #dc3545; color: #fff; text-align: center;
+  padding: 5px; font-size: .75rem; font-weight: 700;
+  z-index: 11000;
+}
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(255,255,255,.98);
+  z-index: 9999; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
 </style>
