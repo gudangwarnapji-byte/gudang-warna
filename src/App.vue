@@ -33,7 +33,11 @@
         </div>
       </div>
 <TransModal v-if="showTransModal" @close="activeTrans = null" />
-      <HistDrawer v-show="showHistDrawer" @close="activeHistId = ''" />
+<HistDrawer 
+  v-show="showHistDrawer" 
+  ref="histDrawerRef"
+  @close="activeHistId = ''" 
+/>
       <DailyModal v-if="showDailyModal" @close="showDailyModal = false" />
       <AddModal v-if="showAddModal" @close="showAddModal = false" />
       <BatchModal v-if="showBatchModal" @close="showBatchModal = false" />
