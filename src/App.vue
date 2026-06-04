@@ -84,7 +84,22 @@ const onRiwayat = (id) => {
 }
 
 const onLokasi = (id) => {
-  console.log('onLokasi:', id)
+  if (currentRole.value !== 'admin') return
+  const item = filteredItems.value.find(x => x.idUnik === id)
+  Swal.fire({
+    title: 'Update Lokasi',
+    input: 'text',
+    inputValue: item?.lokasi || '',
+    inputLabel: 'Contoh: A-01, B-05',
+    showCancelButton: true,
+    confirmButtonText: 'Simpan',
+    confirmButtonColor: '#1e3c72'
+  }).then(result => {
+    if (result.isConfirmed) {
+      const { updateLokasi } = useStok()
+      updateLokasi(id, result.value)
+    }
+  })
 }
 
 const handleOffline = () => { isOffline.value = true }
