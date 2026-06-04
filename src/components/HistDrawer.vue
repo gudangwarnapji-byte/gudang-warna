@@ -115,12 +115,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { ref as dbRef, onValue } from 'firebase/database'
 import { db } from '../firebase'
 import { dbStok } from '../composables/useStok'
 import { activeHistId } from '../composables/useHist'
-import { useEditTrans, activeEditTrans } from '../composables/useEditTrans'
+import { useEditTrans } from '../composables/useEditTrans'
 import { currentRole } from '../composables/useAuth'
 const { bukaEdit } = useEditTrans()
 
@@ -130,6 +130,7 @@ const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov'
 const allLogs = ref({})
 const activeMonth = ref('')
 const loadingHist = ref(false)
+let unsubscribe = null
 
 const activeItem = computed(() =>
   dbStok.value.find(x => x.idUnik === activeHistId.value)
@@ -169,19 +170,30 @@ const formatTime = iso => new Date(iso).toLocaleTimeString('id-ID', {
   hour: '2-digit', minute: '2-digit'
 })
 
-watch(activeHistId, id => {
-  console.log('activeHistId berubah:', id)
+const loadHistoryData = (id) => {
   if (!id) return
+  
+  // Unsubscribe dari listener lama jika ada
+  if (unsubscribe) {
+    unsubscribe()
+    unsubscribe = null
+  }
+  
   loadingHist.value = true
   allLogs.value = {}
   activeMonth.value = ''
+  
   const item = dbStok.value.find(x => x.idUnik === id)
-  onValue(dbRef(db, `riwayat_transaksi/${id}`), snap => {
+  
+  // Gunakan real-time listener (tanpa onlyOnce) agar auto-update
+  unsubscribe = onValue(dbRef(db, `riwayat_transaksi/${id}`), snap => {
     loadingHist.value = false
     const data = snap.val()
     if (!data) return
+    
     let runBal = Number(item?.stokAwal) || 0
     const grouped = {}
+    
     Object.values(data)
       .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
       .forEach(r => {
@@ -194,41 +206,24 @@ watch(activeHistId, id => {
         if (!grouped[key]) grouped[key] = []
         grouped[key].push({ ...r, calculatedBal: runBal })
       })
+    
     allLogs.value = grouped
     activeMonth.value = Object.keys(grouped).sort((a, b) => b.localeCompare(a))[0] || ''
-  }, { onlyOnce: true })
-})
-  // Tambah di bawah watch(activeHistId, ...)
-const reloadHist = () => {
-  if (!activeHistId.value) return
-  loadingHist.value = true
-  allLogs.value = {}
-  activeMonth.value = ''
-  const item = dbStok.value.find(x => x.idUnik === activeHistId.value)
-  onValue(dbRef(db, `riwayat_transaksi/${activeHistId.value}`), snap => {
-    loadingHist.value = false
-    const data = snap.val()
-    if (!data) return
-    let runBal = Number(item?.stokAwal) || 0
-    const grouped = {}
-    Object.values(data)
-      .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
-      .forEach(r => {
-        const q = Number(r.qty)
-        if (r.tipe === 'MASUK') runBal += q
-        else if (r.tipe === 'KELUAR') runBal -= q
-        else if (r.tipe === 'OPNAME') runBal = q
-        runBal = parseFloat(runBal.toFixed(2))
-        const key = (r.tanggal || '').slice(0, 7)
-        if (!grouped[key]) grouped[key] = []
-        grouped[key].push({ ...r, calculatedBal: runBal })
-      })
-    allLogs.value = grouped
-    activeMonth.value = Object.keys(grouped).sort((a, b) => b.localeCompare(a))[0] || ''
-  }, { onlyOnce: true })
+  })
 }
 
-defineExpose({ reloadHist })
+watch(activeHistId, id => {
+  console.log('activeHistId berubah:', id)
+  loadHistoryData(id)
+})
+
+// Cleanup listener saat drawer ditutup
+onUnmounted(() => {
+  if (unsubscribe) {
+    unsubscribe()
+    unsubscribe = null
+  }
+})
 </script>
 
 <style scoped>
