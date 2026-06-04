@@ -111,6 +111,9 @@ import { ref as dbRef, onValue } from 'firebase/database'
 import { db } from '../firebase'
 import { dbStok } from '../composables/useStok'
 import { activeHistId } from '../composables/useHist'
+import { useEditTrans, activeEditTrans } from '../composables/useEditTrans'
+import { currentRole } from '../composables/useAuth'
+const { bukaEdit } = useEditTrans()
 
 const emit = defineEmits(['close'])
 const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
