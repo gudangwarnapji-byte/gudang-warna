@@ -13,19 +13,14 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - name: Create Vite project
-        run: |
-          npm create vite@latest temp-vue -- --template vue
-          cp -r temp-vue/. .
-          rm -rf temp-vue
-      - name: Install dependencies
+      - name: Install dependencies & update lock file
         run: npm install
       - name: Build
         run: npm run build
-      - name: Commit
+      - name: Commit updated lock file
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add .
-          git commit -m "init: Vue + Vite setup"
+          git add package-lock.json
+          git commit -m "fix: update package-lock.json" || echo "No changes"
           git push
