@@ -54,6 +54,8 @@ import AddModal from './components/modals/AddModal.vue'
 import { showAddModal } from './composables/useAdd'
 import BatchModal from './components/modals/BatchModal.vue'
 import { showBatchModal } from './composables/useBatch'
+import EditTransModal from './components/modals/EditTransModal.vue'
+import { activeEditTrans } from './composables/useEditTrans'
   
 import LoginView from './components/LoginView.vue'
 import NavBar from './components/NavBar.vue'
