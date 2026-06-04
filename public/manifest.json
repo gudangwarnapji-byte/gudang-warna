@@ -1,0 +1,22 @@
+{
+  "name": "Gudang Warna",
+  "short_name": "GudangWarna",
+  "description": "Monitoring Sistem Stok Benang",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e3c72",
+  "theme_color": "#1e3c72",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/17167/17167932.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/17167/17167932.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
