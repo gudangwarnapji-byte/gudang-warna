@@ -9,9 +9,17 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      - run: npm create vite@latest . -- --template vue --force
-      - run: npm install
-      - run: |
+      - name: Create Vite project
+        run: |
+          npm create vite@latest temp-vue -- --template vue
+          cp -r temp-vue/. .
+          rm -rf temp-vue
+      - name: Install dependencies
+        run: npm install
+      - name: Build
+        run: npm run build
+      - name: Commit
+        run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add .
