@@ -48,6 +48,8 @@ import { useTrans, activeTrans } from './composables/useTrans'
 import { useHist, activeHistId } from './composables/useHist'
 import DailyModal from './components/modals/DailyModal.vue'
 import { useDaily, showDailyModal } from './composables/useDaily'
+import AddModal from './components/modals/AddModal.vue'
+import { showAddModal } from './composables/useAdd'
   
 import LoginView from './components/LoginView.vue'
 import NavBar from './components/NavBar.vue'
