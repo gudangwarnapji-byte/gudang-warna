@@ -1,0 +1,19 @@
+name: Setup Vue Project
+on:
+  workflow_dispatch:
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm create vite@latest . -- --template vue --force
+      - run: npm install
+      - run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "init: Vue + Vite setup"
+          git push
