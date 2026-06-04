@@ -198,6 +198,37 @@ watch(activeHistId, id => {
     activeMonth.value = Object.keys(grouped).sort((a, b) => b.localeCompare(a))[0] || ''
   }, { onlyOnce: true })
 })
+  // Tambah di bawah watch(activeHistId, ...)
+const reloadHist = () => {
+  if (!activeHistId.value) return
+  loadingHist.value = true
+  allLogs.value = {}
+  activeMonth.value = ''
+  const item = dbStok.value.find(x => x.idUnik === activeHistId.value)
+  onValue(dbRef(db, `riwayat_transaksi/${activeHistId.value}`), snap => {
+    loadingHist.value = false
+    const data = snap.val()
+    if (!data) return
+    let runBal = Number(item?.stokAwal) || 0
+    const grouped = {}
+    Object.values(data)
+      .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
+      .forEach(r => {
+        const q = Number(r.qty)
+        if (r.tipe === 'MASUK') runBal += q
+        else if (r.tipe === 'KELUAR') runBal -= q
+        else if (r.tipe === 'OPNAME') runBal = q
+        runBal = parseFloat(runBal.toFixed(2))
+        const key = (r.tanggal || '').slice(0, 7)
+        if (!grouped[key]) grouped[key] = []
+        grouped[key].push({ ...r, calculatedBal: runBal })
+      })
+    allLogs.value = grouped
+    activeMonth.value = Object.keys(grouped).sort((a, b) => b.localeCompare(a))[0] || ''
+  }, { onlyOnce: true })
+}
+
+defineExpose({ reloadHist })
 </script>
 
 <style scoped>
