@@ -42,10 +42,10 @@
                 @click="$emit('transaksi', 'MASUK', item)">Masuk</button>
         <button class="btn btn-outline-danger flex-grow-1 fw-bold"
                 @click="$emit('transaksi', 'KELUAR', item)">Keluar</button>
-        <button class="btn btn-light border shadow-sm"
-                @click="$emit('riwayat', item.idUnik)">
-          <i class="fas fa-history"></i>
-        </button>
+<button class="btn btn-light border shadow-sm"
+        @click="$emit('riwayat', item.idUnik)">
+  <i class="fas fa-history"></i>
+</button>
         <button class="btn btn-warning border text-dark shadow-sm"
                 @click="$emit('transaksi', 'OPNAME', item)">
           <i class="fas fa-check-double"></i>
