@@ -37,6 +37,11 @@
       <DailyModal v-if="showDailyModal" @close="showDailyModal = false" />
       <AddModal v-if="showAddModal" @close="showAddModal = false" />
       <BatchModal v-if="showBatchModal" @close="showBatchModal = false" />
+      <EditTransModal
+  v-if="activeEditTrans"
+  @close="activeEditTrans = null"
+  @saved="onEditSaved"
+/>
     </template>
   </div>
 </template>
@@ -111,6 +116,9 @@ const onLokasi = (id) => {
       updateLokasi(id, result.value)
     }
   })
+}
+  const onEditSaved = () => {
+  // riwayat reload otomatis
 }
 
 const handleOffline = () => { isOffline.value = true }
