@@ -45,7 +45,9 @@ import { useStok, itemVelocity, loading } from './composables/useStok'
 import { filteredItems } from './composables/useFilter'
 import { useTrans, activeTrans } from './composables/useTrans'
 import { useHist, activeHistId } from './composables/useHist'
-
+import DailyModal from './components/modals/DailyModal.vue'
+import { useDaily, showDailyModal } from './composables/useDaily'
+  
 import LoginView from './components/LoginView.vue'
 import NavBar from './components/NavBar.vue'
 import StickySearch from './components/StickySearch.vue'
