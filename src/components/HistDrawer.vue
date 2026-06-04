@@ -92,7 +92,16 @@
                   {{ r.tipe === 'MASUK' ? '+' : r.tipe === 'KELUAR' ? '-' : '' }}{{ fmt(r.qty) }}
                   <span style="font-size:.7rem;color:#999">Kg</span>
                 </div>
-                <div class="history-bal">Sisa: {{ fmt(r.calculatedBal) }}</div>
+                <div class="history-bal">
+  Sisa: {{ fmt(r.calculatedBal) }}
+  <button
+    v-if="currentRole === 'admin'"
+    class="btn btn-sm btn-link text-muted p-0 ms-2"
+    @click="bukaEdit(r, activeHistId)"
+  >
+    <i class="fas fa-pencil-alt"></i>
+  </button>
+</div>
               </div>
             </div>
           </div>
