@@ -32,7 +32,6 @@
           <h5>Data Kosong / Tidak Ditemukan</h5>
         </div>
       </div>
-
       <TransModal v-if="showTransModal" @close="activeTrans = null" />
       <HistDrawer v-if="showHistDrawer" @close="activeHistId = ''" />
     </template>
@@ -56,17 +55,15 @@ import HistDrawer from './components/HistDrawer.vue'
 
 const { initAuth } = useAuth()
 const { refreshData } = useStok()
-const { bukaTransaksi } = useTrans()
 const { bukaRiwayat } = useHist()
+const { bukaTransaksi } = useTrans()
 
 const currentUser = ref(null)
 const authReady = ref(false)
 const isOffline = ref(false)
 const itemsToShow = ref(30)
 
-const visibleItems = computed(() =>
-  filteredItems.value.slice(0, itemsToShow.value)
-)
+const visibleItems = computed(() => filteredItems.value.slice(0, itemsToShow.value))
 const showTransModal = computed(() => !!activeTrans.value)
 const showHistDrawer = computed(() => !!activeHistId.value)
 
@@ -76,34 +73,38 @@ initAuth(user => {
   if (user) refreshData()
 })
 
-// Handler emit dari CardItem
-const onTransaksi = (tipe, item) => bukaTransaksi(tipe, item)
-const onRiwayat = (id) => {
-  console.log('onRiwayat dipanggil:', id)  // ← tambah ini
-  bukaRiwayat(id)
-const onLokasi    = (id) => {
-  if (currentRole.value !== 'admin') return
-  const item = filteredItems.value.find(x => x.idUnik === id)
-  // TODO: buka dialog ganti lokasi
+const onTransaksi = (tipe, item) => {
+  console.log('onTransaksi:', tipe, item.nama)
+  bukaTransaksi(tipe, item)
 }
 
-const handleOffline = () => isOffline.value = true
-const handleOnline  = () => isOffline.value = false
+const onRiwayat = (id) => {
+  console.log('onRiwayat:', id)
+  bukaRiwayat(id)
+}
+
+const onLokasi = (id) => {
+  console.log('onLokasi:', id)
+}
+
+const handleOffline = () => { isOffline.value = true }
+const handleOnline = () => { isOffline.value = false }
 
 onMounted(() => {
   window.addEventListener('offline', handleOffline)
-  window.addEventListener('online',  handleOnline)
+  window.addEventListener('online', handleOnline)
   window.addEventListener('scroll', () => {
     if (window.scrollY + window.innerHeight > document.body.scrollHeight - 250) {
-      if (itemsToShow.value < filteredItems.value.length)
+      if (itemsToShow.value < filteredItems.value.length) {
         itemsToShow.value += 20
+      }
     }
   })
 })
 
 onUnmounted(() => {
   window.removeEventListener('offline', handleOffline)
-  window.removeEventListener('online',  handleOnline)
+  window.removeEventListener('online', handleOnline)
 })
 </script>
 
