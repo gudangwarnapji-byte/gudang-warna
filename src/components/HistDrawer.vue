@@ -158,6 +158,7 @@ const formatTime = iso => new Date(iso).toLocaleTimeString('id-ID', {
 })
 
 watch(activeHistId, id => {
+  console.log('activeHistId berubah:', id)
   if (!id) return
   loadingHist.value = true
   allLogs.value = {}
