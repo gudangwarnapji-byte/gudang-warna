@@ -22,10 +22,10 @@
             :key="item.idUnik"
             :item="item"
             :velocity="itemVelocity[item.idUnik]"
-            :role="currentRole.value"
-            @transaksi="bukaTransaksi"
-            @riwayat="bukaRiwayat"
-            @lokasi="bukaLokasi"
+            :role="currentRole"
+            @transaksi="onTransaksi"
+            @riwayat="onRiwayat"
+            @lokasi="onLokasi"
           />
         </div>
         <div v-if="!filteredItems.length" class="text-center py-5 text-muted">
@@ -33,8 +33,8 @@
         </div>
       </div>
 
-      <TransModal v-if="showTransModal" @close="activeTrans.value = null" />
-      <HistDrawer v-if="showHistDrawer" @close="activeHistId.value = ''" />
+      <TransModal v-if="showTransModal" @close="activeTrans = null" />
+      <HistDrawer v-if="showHistDrawer" @close="activeHistId = ''" />
     </template>
   </div>
 </template>
@@ -76,6 +76,15 @@ initAuth(user => {
   if (user) refreshData()
 })
 
+// Handler emit dari CardItem
+const onTransaksi = (tipe, item) => bukaTransaksi(tipe, item)
+const onRiwayat   = (id) => bukaRiwayat(id)
+const onLokasi    = (id) => {
+  if (currentRole.value !== 'admin') return
+  const item = filteredItems.value.find(x => x.idUnik === id)
+  // TODO: buka dialog ganti lokasi
+}
+
 const handleOffline = () => isOffline.value = true
 const handleOnline  = () => isOffline.value = false
 
@@ -94,8 +103,6 @@ onUnmounted(() => {
   window.removeEventListener('offline', handleOffline)
   window.removeEventListener('online',  handleOnline)
 })
-
-const bukaLokasi = (id) => {}
 </script>
 
 <style>
