@@ -73,6 +73,10 @@ const { initAuth } = useAuth()
 const { refreshData } = useStok()
 const { bukaRiwayat } = useHist()
 const { bukaTransaksi } = useTrans()
+const histDrawerRef = ref(null)
+const onEditSaved = () => {
+  histDrawerRef.value?.reloadHist()
+}
 
 const currentUser = ref(null)
 const authReady = ref(false)
