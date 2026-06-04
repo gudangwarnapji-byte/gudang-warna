@@ -85,6 +85,8 @@ import { useAuth, user, currentRole } from '../composables/useAuth'
 import { useStok, dbStok } from '../composables/useStok'
 import { useDaily } from '../composables/useDaily'
 import { useAdd, showAddModal } from '../composables/useAdd'
+import { useBatch, showBatchModal } from '../composables/useBatch'
+const { bukaBatch } = useBatch()
 const { bukaAddModal } = useAdd()
 const { doLogout } = useAuth()
 const { refreshData } = useStok()
