@@ -124,7 +124,7 @@ const getGradeClass = (g) => {
 
 <style scoped>
 .sticky-search {
-  position: sticky; top: 0; z-index: 1020;
+  position: sticky; top: 0; z-index: 900;
   background: #f4f6f9; padding: 10px 0 6px;
   box-shadow: 0 4px 6px -4px rgba(0,0,0,.05);
 }
