@@ -79,6 +79,8 @@
 
 <script setup>
 import { computed } from 'vue'
+import { ref as dbRef, get, update } from 'firebase/database'
+import { db } from '../firebase'
 import { useAuth, user, currentRole } from '../composables/useAuth'
 import { useStok, dbStok } from '../composables/useStok'
 import { useDaily } from '../composables/useDaily'
@@ -89,13 +91,18 @@ const { bukaDaily } = useDaily()
 
 const isAdmin = computed(() => currentRole.value === 'admin')
 
-// Placeholder laporan lain — akan diisi nanti
-const bukaMutasi    = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
-const bukaBulanan   = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
+const bukaMutasi     = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
+const bukaBulanan    = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
 const bukaRekapJenis = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
+const bukaAddModal   = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
 
-// Admin tools
-const bukaAddModal = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
+const getTipeGrade = kode => {
+  const k = (kode || '').toUpperCase()
+  const tipe  = k.includes('BBO') ? 'OVERAN' : k.includes('BBG') ? 'DESTEX' : 'PAJITEX'
+  const last  = k.slice(-1)
+  const grade = last === 'B' ? 'B' : last === 'L' ? 'L' : 'A'
+  return { tipe, grade }
+}
 
 const konfirmasiAudit = () => {
   window.Swal.fire({
@@ -110,13 +117,13 @@ const konfirmasiAudit = () => {
 const jalankanAudit = async () => {
   window.Swal.fire({ title: 'Menghitung...', allowOutsideClick: false, didOpen: () => window.Swal.showLoading() })
   try {
-    const { ref as dbRef, get, update } = await import('firebase/database')
-    const { db } = await import('../firebase')
     const [snapM, snapH] = await Promise.all([
       get(dbRef(db, 'stok_benang')),
       get(dbRef(db, 'riwayat_transaksi'))
     ])
-    const masters = snapM.val() || {}, histories = snapH.val() || {}, updates = {}
+    const masters = snapM.val() || {}
+    const histories = snapH.val() || {}
+    const updates = {}
     Object.keys(masters).forEach(id => {
       let run = Number(masters[id].stokAwal) || 0
       Object.values(histories[id] || {})
@@ -152,17 +159,12 @@ const konfirmasiAutoFix = () => {
 const jalankanAutoFix = async () => {
   window.Swal.fire({ title: 'Proses...', allowOutsideClick: false, didOpen: () => window.Swal.showLoading() })
   try {
-    const { ref as dbRef, get, update } = await import('firebase/database')
-    const { db } = await import('../firebase')
     const snap = await get(dbRef(db, 'stok_benang'))
     const data = snap.val()
     if (!data) return
     const updates = {}
     Object.keys(data).forEach(key => {
-      const k = (data[key].kodeErp || '').toUpperCase()
-      const tipe = k.includes('BBO') ? 'OVERAN' : k.includes('BBG') ? 'DESTEX' : 'PAJITEX'
-      const last = k.slice(-1)
-      const grade = last === 'B' ? 'B' : last === 'L' ? 'L' : 'A'
+      const { tipe, grade } = getTipeGrade(data[key].kodeErp)
       updates[`stok_benang/${key}/tipe`] = tipe
       updates[`stok_benang/${key}/grade`] = grade
     })
