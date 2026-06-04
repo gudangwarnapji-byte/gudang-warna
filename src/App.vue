@@ -35,6 +35,7 @@
 <TransModal v-if="showTransModal" @close="activeTrans = null" />
       <HistDrawer v-show="showHistDrawer" @close="activeHistId = ''" />
       <DailyModal v-if="showDailyModal" @close="showDailyModal = false" />
+      <AddModal v-if="showAddModal" @close="showAddModal = false" />
     </template>
   </div>
 </template>
