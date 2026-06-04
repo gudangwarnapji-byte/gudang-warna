@@ -110,8 +110,7 @@ import { ref, computed, watch } from 'vue'
 import { ref as dbRef, onValue } from 'firebase/database'
 import { db } from '../firebase'
 import { dbStok } from '../composables/useStok'
-import { activeHistId, useHist } from '../composables/useHist'
-const { tutupRiwayat } = useHist()
+import { activeHistId } from '../composables/useHist'
 
 const emit = defineEmits(['close'])
 const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
