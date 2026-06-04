@@ -20,16 +20,21 @@
       <div class="d-flex align-items-center gap-2">
 
         <!-- ADMIN ONLY -->
-        <template v-if="isAdmin">
-          <button class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm"
-                  @click="bukaAddModal">
-            <i class="fas fa-plus-circle me-1"></i> Barang
-          </button>
-          <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm"
-                  style="border-radius:8px"
-                  @click="konfirmasiAudit">
-            <i class="fas fa-wrench"></i>
-          </button>
+<template v-if="isAdmin">
+  <button class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm"
+          @click="bukaAddModal">
+    <i class="fas fa-plus-circle me-1"></i> Barang
+  </button>
+  <button class="btn btn-sm btn-primary fw-bold shadow-sm"
+          style="border-radius:8px"
+          @click="bukaBatch">
+    <i class="fas fa-paste"></i>
+  </button>
+  <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm"
+          style="border-radius:8px"
+          @click="konfirmasiAudit">
+    <i class="fas fa-wrench"></i>
+  </button>
           <button class="btn btn-sm btn-light text-primary fw-bold shadow-sm"
                   style="border-radius:8px"
                   @click="konfirmasiAutoFix">
