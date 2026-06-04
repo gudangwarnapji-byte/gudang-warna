@@ -86,7 +86,7 @@ const onRiwayat = (id) => {
 const onLokasi = (id) => {
   if (currentRole.value !== 'admin') return
   const item = filteredItems.value.find(x => x.idUnik === id)
-  Swal.fire({
+  window.Swal.fire({
     title: 'Update Lokasi',
     input: 'text',
     inputValue: item?.lokasi || '',
