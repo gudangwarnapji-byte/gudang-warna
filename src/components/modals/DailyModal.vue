@@ -26,14 +26,15 @@
         <div class="modal-body p-0">
           <div class="table-responsive" style="max-height:50vh;overflow-y:auto">
             <table class="table table-hover mb-0 align-middle small">
-              <thead class="table-light sticky-top shadow-sm">
-                <tr>
-                  <th>Kode &amp; Nama Barang</th>
-                  <th>Tipe</th>
-                  <th class="text-end">Qty (Kg)</th>
-                  <th>Keterangan</th>
-                </tr>
-              </thead>
+<thead class="table-light sticky-top shadow-sm">
+  <tr>
+    <th>Kode &amp; Nama Barang</th>
+    <th>Tipe</th>
+    <th class="text-end">Qty (Kg)</th>
+    <th>Keterangan</th>
+    <th v-if="currentRole === 'admin'" class="text-center">Aksi</th>
+  </tr>
+</thead>
               <tbody>
                 <template v-if="loading">
                   <tr><td colspan="4" class="text-center py-4">
@@ -56,19 +57,25 @@
                       </td>
                     </tr>
                     <!-- ROWS -->
-                    <tr v-for="r in group.rows" :key="r.trxId">
-                      <td class="ps-4">
-                        <div class="fw-bold text-dark" style="line-height:1.1">{{ r.namaBarang }}</div>
-                        <div style="font-size:.7rem" class="text-muted font-monospace">{{ r.kodeErpRef }}</div>
-                      </td>
-                      <td><span class="badge" :class="tipeBadgeClass(r.tipe)">{{ r.tipe }}</span></td>
-                      <td class="text-end fw-bold">{{ fmt(r.qty) }}</td>
-                      <td>
-                        <span class="badge badge-ket text-uppercase shadow-sm" :class="ketBadgeClass(r.keterangan)">
-                          {{ r.keterangan || '-' }}
-                        </span>
-                      </td>
-                    </tr>
+<tr v-for="r in group.rows" :key="r.trxId">
+  <td class="ps-4">
+    <div class="fw-bold text-dark" style="line-height:1.1">{{ r.namaBarang }}</div>
+    <div style="font-size:.7rem" class="text-muted font-monospace">{{ r.kodeErpRef }}</div>
+  </td>
+  <td><span class="badge" :class="tipeBadgeClass(r.tipe)">{{ r.tipe }}</span></td>
+  <td class="text-end fw-bold">{{ fmt(r.qty) }}</td>
+  <td>
+    <span class="badge badge-ket text-uppercase shadow-sm" :class="ketBadgeClass(r.keterangan)">
+      {{ r.keterangan || '-' }}
+    </span>
+  </td>
+  <td v-if="currentRole === 'admin'" class="text-center">
+    <button class="btn btn-sm btn-link text-warning p-0"
+            @click="editDariHarian(r)">
+      <i class="fas fa-pencil-alt"></i>
+    </button>
+  </td>
+</tr>
                   </template>
                 </template>
                 <template v-else>
@@ -114,9 +121,14 @@ import { ref, computed, onMounted } from 'vue'
 import { ref as dbRef, onValue } from 'firebase/database'
 import { db } from '../../firebase'
 import { dbStok } from '../../composables/useStok'
-
+import { useEditTrans, activeEditTrans } from '../../composables/useEditTrans'
+import { currentRole } from '../../composables/useAuth'
+const { bukaEdit } = useEditTrans()
 const emit = defineEmits(['close'])
-
+const editDariHarian = (r) => {
+  bukaEdit(r, r.parentId)
+  emit('close')
+}
 const tglPicker = ref(new Date().toISOString().slice(0, 10))
 const loading = ref(false)
 const logs = ref([])
