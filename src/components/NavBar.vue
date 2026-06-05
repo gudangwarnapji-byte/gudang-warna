@@ -71,6 +71,10 @@
               <i class="fas fa-calendar-alt" style="color:#6f42c1;width:24px;text-align:center"></i> Arus Bulanan
             </a></li>
             <li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaSuratJalan">
+  <i class="fas fa-file-pdf text-danger" style="width:24px;text-align:center"></i> Surat Jalan PDF
+</a></li>
+            <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaRekapJenis">
               <i class="fas fa-layer-group text-warning" style="width:24px;text-align:center"></i> Total Per Jenis
             </a></li>
@@ -100,6 +104,8 @@ import { useBulanan } from '../composables/useBulanan'
 import { useAdd, showAddModal } from '../composables/useAdd'
 import { useBatch, showBatchModal } from '../composables/useBatch'
 import { useSelisih } from '../composables/useSelisih'
+import { useSuratJalan } from '../composables/useSuratJalan'
+const { bukaSuratJalan } = useSuratJalan()
 const { bukaSelisih } = useSelisih()
 const { bukaBatch } = useBatch()
 const { bukaAddModal } = useAdd()
