@@ -89,7 +89,7 @@ import { db } from '../firebase'
 import { useAuth, user, currentRole } from '../composables/useAuth'
 import { useStok, dbStok } from '../composables/useStok'
 import { useDaily } from '../composables/useDaily'
-import { useMutasi } from '../composables/useMutasi'
+import { useMutasi, showMutasiModal } from '../composables/useMutasi'
 import { useBulanan } from '../composables/useBulanan'
 import { useAdd, showAddModal } from '../composables/useAdd'
 import { useBatch, showBatchModal } from '../composables/useBatch'
@@ -98,7 +98,6 @@ const { bukaAddModal } = useAdd()
 const { doLogout } = useAuth()
 const { refreshData } = useStok()
 const { bukaDaily } = useDaily()
-import { useMutasi, showMutasiModal } from '../composables/useMutasi'
 const { bukaMutasi } = useMutasi()
 const { bukaBulanan } = useBulanan()
 
