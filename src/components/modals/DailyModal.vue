@@ -236,6 +236,7 @@ const exportExcel = () => {
 }
 
 onMounted(() => loadData())
+  defineExpose({ loadData })
 </script>
 
 <style scoped>
