@@ -208,12 +208,20 @@ const totalQty = computed(() =>
 
 const cariSuggestions = q => {
   if (!q || q.length < 1) return []
-  const val = q.toUpperCase()
-  return dbStok.value.filter(i =>
-    (i.kodeErp || '').toUpperCase().includes(val) ||
-    (i.nama    || '').toUpperCase().includes(val) ||
-    (i.warna   || '').toUpperCase().includes(val)
-  ).slice(0, 10)
+  
+  const tokens = q.toUpperCase().trim().split(/\s+/).filter(Boolean)
+  
+  return dbStok.value
+    .filter(i => {
+      const haystack = [
+        i.kodeErp || '',
+        i.nama    || '',
+        i.warna   || ''
+      ].join(' ').toUpperCase()
+      return tokens.every(token => haystack.includes(token))
+    })
+    .sort((a, b) => (a.kodeErp || '').localeCompare(b.kodeErp || ''))
+    .slice(0, 10)
 }
 
 const onInput = (row, idx) => {
@@ -259,13 +267,29 @@ const pilihItem = (row, idx, item) => {
 }
 
 const fuzzyMatch = rawKey => {
-  const val = rawKey.toUpperCase()
-  return dbStok.value.find(i => i.kodeErp.toUpperCase() === val) ||
-         dbStok.value.find(i => (i.nama || '').toUpperCase() === val) ||
-         dbStok.value.find(i => i.kodeErp.toUpperCase().includes(val)) ||
-         dbStok.value.find(i => (i.nama || '').toUpperCase().includes(val)) ||
-         dbStok.value.find(i => (i.warna || '').toUpperCase().includes(val)) ||
-         null
+  const val    = rawKey.toUpperCase().trim()
+  const tokens = val.split(/\s+/).filter(Boolean)
+
+  // 1. Exact kode ERP
+  let found = dbStok.value.find(i => i.kodeErp.toUpperCase() === val)
+  if (found) return found
+
+  // 2. Exact nama
+  found = dbStok.value.find(i => (i.nama || '').toUpperCase() === val)
+  if (found) return found
+
+  // 3. Multi-token search di semua field
+  found = dbStok.value.find(i => {
+    const haystack = [
+      i.kodeErp || '',
+      i.nama    || '',
+      i.warna   || ''
+    ].join(' ').toUpperCase()
+    return tokens.every(token => haystack.includes(token))
+  })
+  if (found) return found
+
+  return null
 }
 
 const addEmptyRow = () => {
