@@ -308,12 +308,13 @@ const applyItem = (row, item) => {
     row.kodeErp     = item.kodeErp
     row.warna       = item.warna || ''
     row.currentStok = parseFloat(item.stok) || 0
-    row.rawKey      = `${item.kodeErp} | ${fmt(item.stok)} - ${item.warna}`
+    // rawKey TIDAK diubah — biarkan teks asli dari paste
   } else {
     row.itemId      = ''
     row.kodeErp     = ''
     row.warna       = ''
     row.currentStok = 0
+    // rawKey tetap teks asli supaya user tahu mana yang tidak cocok
   }
 }
 
