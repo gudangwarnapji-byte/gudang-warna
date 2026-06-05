@@ -39,6 +39,7 @@
   ref="dailyModalRef"
   @close="showDailyModal = false" 
 />
+      <SuratJalanModal v-if="showSuratJalanModal" @close="showSuratJalanModal = false" />
       <SelisihModal v-if="showSelisihModal" @close="showSelisihModal = false" />
       <MutasiModal v-if="showMutasiModal" @close="showMutasiModal = false" />
       <BulananModal v-if="showBulananModal" @close="showBulananModal = false" />
@@ -80,7 +81,9 @@ import StickySearch from './components/StickySearch.vue'
 import CardItem from './components/CardItem.vue'
 import TransModal from './components/modals/TransModal.vue'
 import HistDrawer from './components/HistDrawer.vue'
-
+import SuratJalanModal from './components/modals/SuratJalanModal.vue'
+import { showSuratJalanModal } from './composables/useSuratJalan'
+  
 const { initAuth } = useAuth()
 const { refreshData } = useStok()
 const { bukaRiwayat } = useHist()
