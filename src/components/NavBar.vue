@@ -45,6 +45,12 @@
                   @click="exportStok">
             <i class="fas fa-file-excel"></i>
           </button>
+  <button class="btn btn-sm btn-dark fw-bold shadow-sm"
+        style="border-radius:8px"
+        @click="bukaSelisih"
+        title="Cek Selisih vs ERP">
+  <i class="fas fa-balance-scale"></i>
+</button>
         </template>
 
         <!-- LAPORAN -->
@@ -93,6 +99,8 @@ import { useMutasi, showMutasiModal } from '../composables/useMutasi'
 import { useBulanan } from '../composables/useBulanan'
 import { useAdd, showAddModal } from '../composables/useAdd'
 import { useBatch, showBatchModal } from '../composables/useBatch'
+import { useSelisih } from '../composables/useSelisih'
+const { bukaSelisih } = useSelisih()
 const { bukaBatch } = useBatch()
 const { bukaAddModal } = useAdd()
 const { doLogout } = useAuth()
