@@ -1,194 +1,163 @@
 <template>
   <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content border-0 shadow-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow">
+
         <!-- HEADER -->
-        <div class="modal-header bg-purple text-white fw-bold" style="background:#6f42c1">
-          <h5 class="modal-title">
-            <i class="fas fa-chart-bar me-2"></i>Laporan Arus Bulanan
-          </h5>
-          <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
+        <div class="modal-header text-white" style="background-color:#6f42c1">
+          <div class="w-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="modal-title fw-bold">Laporan Arus Bulanan</h5>
+              <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
+            </div>
+            <div class="input-group input-group-sm shadow-sm">
+              <input type="month" class="form-control border-0 fw-bold"
+                     v-model="blnPicker" @change="loadData">
+              <button class="btn btn-light text-primary fw-bold" @click="loadData">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+              <button class="btn btn-success fw-bold ms-1" @click="exportExcel">
+                <i class="fas fa-file-excel"></i>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- BODY -->
-        <div class="modal-body">
-          <!-- MONTH SELECTOR -->
-          <div class="mb-3">
-            <label class="small fw-bold text-muted">Pilih Bulan & Tahun</label>
-            <input type="month" v-model="bulanTahun" class="form-control">
-          </div>
-
-          <!-- LOADING -->
-          <div v-if="loading" class="text-center py-4">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-2 text-muted small">Memproses data...</p>
-          </div>
-
-          <!-- CHART & DATA -->
-          <div v-else-if="chartData.length">
-            <!-- SUMMARY CARDS -->
-            <div class="row g-2 mb-3">
-              <div class="col-4">
-                <div class="card border-0 bg-success text-white text-center">
-                  <div class="card-body py-2">
-                    <small class="d-block fw-bold" style="font-size:.7rem">TOTAL MASUK</small>
-                    <div class="fw-bold" style="font-size:1.1rem">+{{ fmt(totalMasuk) }}</div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-4">
-                <div class="card border-0 bg-danger text-white text-center">
-                  <div class="card-body py-2">
-                    <small class="d-block fw-bold" style="font-size:.7rem">TOTAL KELUAR</small>
-                    <div class="fw-bold" style="font-size:1.1rem">-{{ fmt(totalKeluar) }}</div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-4">
-                <div class="card border-0 text-center" :style="`background:${totalNetto >= 0 ? '#198754' : '#dc3545'}`" style="color:white">
-                  <div class="card-body py-2">
-                    <small class="d-block fw-bold" style="font-size:.7rem">NETTO</small>
-                    <div class="fw-bold" style="font-size:1.1rem">{{ totalNetto >= 0 ? '+' : '' }}{{ fmt(totalNetto) }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- TABLE -->
-            <div class="table-responsive" style="max-height:400px;overflow-y:auto">
-              <table class="table table-sm table-bordered mb-0">
-                <thead class="sticky-top bg-light">
-                  <tr>
-                    <th class="text-center fw-bold" style="font-size:.8rem">Tanggal</th>
-                    <th class="text-center fw-bold" style="font-size:.8rem">Masuk</th>
-                    <th class="text-center fw-bold" style="font-size:.8rem">Keluar</th>
-                    <th class="text-center fw-bold" style="font-size:.8rem">Netto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="data in chartData" :key="data.tgl">
-                    <td class="fw-bold" style="font-size:.8rem">{{ formatDate(data.tgl) }}</td>
-                    <td class="text-center text-success fw-bold" style="font-size:.85rem">+{{ fmt(data.masuk) }}</td>
-                    <td class="text-center text-danger fw-bold" style="font-size:.85rem">-{{ fmt(data.keluar) }}</td>
-                    <td class="text-center fw-bold" style="font-size:.85rem">
-                      <span :class="data.netto >= 0 ? 'text-success' : 'text-danger'">
-                        {{ data.netto >= 0 ? '+' : '' }}{{ fmt(data.netto) }}
+        <div class="modal-body p-0">
+          <div class="table-responsive" style="max-height:50vh;overflow-y:auto">
+            <table class="table table-striped mb-0 align-middle text-center small">
+              <thead class="table-light sticky-top shadow-sm">
+                <tr>
+                  <th>TANGGAL</th>
+                  <th>KETERANGAN</th>
+                  <th class="text-success">TOTAL MASUK (Kg)</th>
+                  <th class="text-danger">TOTAL KELUAR (Kg)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template v-if="loading">
+                  <tr><td colspan="4" class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                  </td></tr>
+                </template>
+                <template v-else-if="rows.length">
+                  <tr v-for="r in rows" :key="r.key">
+                    <td class="fw-bold">{{ formatDate(r.date) }}</td>
+                    <td>
+                      <span class="badge badge-ket text-uppercase shadow-sm"
+                            :class="ketBadgeClass(r.ket)">
+                        {{ r.ket }}
                       </span>
                     </td>
+                    <td class="text-success fw-bold">{{ r.in > 0 ? fmt(r.in) : '-' }}</td>
+                    <td class="text-danger fw-bold">{{ r.out > 0 ? fmt(r.out) : '-' }}</td>
                   </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- EMPTY -->
-          <div v-else class="text-center py-5 text-muted">
-            <i class="fas fa-inbox" style="font-size:2rem;opacity:.3"></i>
-            <p class="mt-2 small">Tidak ada data untuk bulan ini</p>
+                </template>
+                <template v-else>
+                  <tr><td colspan="4" class="text-center py-5 text-muted">
+                    Tidak ada data bulan ini
+                  </td></tr>
+                </template>
+              </tbody>
+            </table>
           </div>
         </div>
 
         <!-- FOOTER -->
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-sm btn-primary" @click="exportExcel" :disabled="!chartData.length">
-            <i class="fas fa-download me-1"></i>Export Excel
-          </button>
-          <button type="button" class="btn btn-sm btn-secondary" @click="$emit('close')">
-            Tutup
-          </button>
+        <div class="modal-footer bg-light py-2 d-flex justify-content-between fw-bold small">
+          <div>Total Masuk: <span class="text-success">{{ fmt(grandIn) }} Kg</span></div>
+          <div>Total Keluar: <span class="text-danger">{{ fmt(grandOut) }} Kg</span></div>
         </div>
+
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { ref as dbRef, onValue } from 'firebase/database'
+import { ref, computed, onMounted } from 'vue'
+import { ref as dbRef, get } from 'firebase/database'
 import { db } from '../../firebase'
 
 const emit = defineEmits(['close'])
 
-const bulanTahun = ref('')
-const loading = ref(false)
-const chartData = ref([])
+const blnPicker = ref(new Date().toISOString().slice(0, 7))
+const loading   = ref(false)
+const rows      = ref([])
 
 const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
 })
 
-const formatDate = dateStr => {
-  return new Date(dateStr).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })
+const grandIn  = computed(() => rows.value.reduce((s, r) => s + r.in, 0))
+const grandOut = computed(() => rows.value.reduce((s, r) => s + r.out, 0))
+
+const formatDate = d => new Date(d).toLocaleDateString('id-ID', {
+  day: '2-digit', month: 'short', year: 'numeric'
+})
+
+const ketBadgeClass = ket => {
+  const t = (ket || '').toUpperCase()
+  if (t.includes('AJL'))     return 'bg-primary'
+  if (t.includes('WARPING')) return 'bg-danger'
+  if (t.includes('WEAVING')) return 'bg-warning text-dark'
+  if (t.includes('KELOS'))   return 'bg-success'
+  return 'bg-secondary'
 }
 
-const totalMasuk = computed(() => chartData.value.reduce((a, b) => a + (b.masuk || 0), 0))
-const totalKeluar = computed(() => chartData.value.reduce((a, b) => a + (b.keluar || 0), 0))
-const totalNetto = computed(() => totalMasuk.value - totalKeluar.value)
-
-const loadBulanan = () => {
-  if (!bulanTahun.value) return
-  
+const loadData = async () => {
+  if (!blnPicker.value) return
   loading.value = true
-  chartData.value = []
-  
-  onValue(dbRef(db, 'riwayat_transaksi'), snap => {
-    loading.value = false
-    const all = snap.val()
-    const byDate = {}
-    
-    if (all) {
-      Object.values(all).forEach(itemHist => {
-        Object.values(itemHist || {}).forEach(trx => {
-          const tgl = trx.tanggal?.slice(0, 10)
-          if (tgl?.startsWith(bulanTahun.value)) {
-            if (!byDate[tgl]) byDate[tgl] = { tgl, masuk: 0, keluar: 0 }
-            const qty = Number(trx.qty) || 0
-            if (trx.tipe === 'MASUK') byDate[tgl].masuk += qty
-            else if (trx.tipe === 'KELUAR') byDate[tgl].keluar += qty
-          }
-        })
+  rows.value = []
+  try {
+    const snap = await get(dbRef(db, 'riwayat_transaksi'))
+    const all  = snap.val() || {}
+    const breakdown = {}
+
+    Object.values(all).forEach(trxs => {
+      Object.values(trxs || {}).forEach(trx => {
+        const d = (trx.tanggal || '').split('T')[0]
+        if (!d.startsWith(blnPicker.value)) return
+        if (!['MASUK', 'KELUAR'].includes(trx.tipe)) return
+        const ket = (trx.keterangan || '-').toUpperCase().trim() || '-'
+        const key = `${d}||${ket}`
+        if (!breakdown[key]) breakdown[key] = { date: d, ket, in: 0, out: 0, key }
+        const q = parseFloat(trx.qty) || 0
+        if (trx.tipe === 'MASUK')  breakdown[key].in  += q
+        else                        breakdown[key].out += q
       })
-    }
-    
-    chartData.value = Object.values(byDate)
-      .sort((a, b) => new Date(a.tgl) - new Date(b.tgl))
-      .map(d => ({ ...d, netto: d.masuk - d.keluar }))
-  }, { onlyOnce: true })
+    })
+
+    rows.value = Object.values(breakdown).sort((a, b) =>
+      a.date.localeCompare(b.date) || a.ket.localeCompare(b.ket)
+    )
+  } catch(e) {
+    window.Swal.fire('Error', e.message, 'error')
+  } finally {
+    loading.value = false
+  }
 }
 
 const exportExcel = () => {
-  if (!chartData.value.length) return
-  const [tahun, bulan] = bulanTahun.value.split('-')
-  const namaBulan = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][parseInt(bulan)]
-  const rows = [
-    ['LAPORAN ARUS BULANAN'],
-    ['Periode:', `${namaBulan} ${tahun}`],
-    [],
-    ['TANGGAL', 'MASUK (KG)', 'KELUAR (KG)', 'NETTO (KG)'],
-    ...chartData.value.map(d => [
-      formatDate(d.tgl),
-      d.masuk,
-      d.keluar,
-      d.netto
-    ]),
-    [],
-    ['TOTAL BULAN', totalMasuk.value, totalKeluar.value, totalNetto.value]
+  if (!rows.value.length) return
+  const data = [
+    ['TANGGAL', 'KETERANGAN', 'TOTAL MASUK (KG)', 'TOTAL KELUAR (KG)'],
+    ...rows.value.map(r => [r.date, r.ket, r.in, r.out])
   ]
-  const ws = window.XLSX.utils.aoa_to_sheet(rows)
+  const ws = window.XLSX.utils.aoa_to_sheet(data)
   const wb = window.XLSX.utils.book_new()
-  window.XLSX.utils.book_append_sheet(wb, ws, 'Arus')
-  window.XLSX.writeFile(wb, `Laporan_Arus_Bulanan_${bulanTahun.value}.xlsx`)
+  window.XLSX.utils.book_append_sheet(wb, ws, 'Bulanan')
+  window.XLSX.writeFile(wb, `Laporan_Bulanan_${blnPicker.value}.xlsx`)
 }
 
-watch(bulanTahun, () => loadBulanan())
-
-onMounted(() => {
-  const today = new Date()
-  bulanTahun.value = today.toISOString().slice(0, 7)
-})
+onMounted(() => loadData())
 </script>
 
 <style scoped>
-.table-sm th { padding: 8px 4px; }
-.table-sm td { padding: 6px 4px; }
+.badge-ket {
+  font-size: .75rem; padding: 5px 8px;
+  border-radius: 6px; font-weight: 600;
+  white-space: normal; text-align: left; line-height: 1.2;
+}
 </style>
