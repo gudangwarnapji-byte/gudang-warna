@@ -1,194 +1,173 @@
 <template>
   <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content border-0 shadow-lg">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content border-0 shadow">
+
         <!-- HEADER -->
-        <div class="modal-header bg-success text-white fw-bold">
-          <h5 class="modal-title">
-            <i class="fas fa-exchange-alt me-2"></i>Laporan Mutasi Barang
-          </h5>
-          <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
+        <div class="modal-header text-white" style="background-color:#20c997">
+          <div class="w-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="modal-title fw-bold">Laporan Mutasi Stok</h5>
+              <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
+            </div>
+            <div class="input-group input-group-sm shadow-sm">
+              <input type="month" class="form-control border-0 fw-bold"
+                     v-model="blnPicker" @change="loadData">
+              <button class="btn btn-light text-success fw-bold" @click="loadData">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+              <button class="btn btn-success fw-bold ms-1" @click="exportExcel">
+                <i class="fas fa-file-excel"></i>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- BODY -->
-        <div class="modal-body">
-          <!-- DATE PICKER -->
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="small fw-bold text-muted">Dari Tanggal</label>
-              <input type="date" v-model="tglMulai" class="form-control">
-            </div>
-            <div class="col-6">
-              <label class="small fw-bold text-muted">Sampai Tanggal</label>
-              <input type="date" v-model="tglAkhir" class="form-control">
-            </div>
-          </div>
-
-          <!-- LOADING -->
-          <div v-if="loading" class="text-center py-4">
-            <div class="spinner-border text-success" role="status"></div>
-            <p class="mt-2 text-muted small">Memproses data...</p>
-          </div>
-
-          <!-- DATA TABEL -->
-          <div v-else-if="mutasiData.length">
-            <div class="table-responsive" style="max-height:500px;overflow-y:auto">
-              <table class="table table-sm table-bordered mb-0">
-                <thead class="sticky-top bg-light">
-                  <tr>
-                    <th class="text-center fw-bold" style="font-size:.8rem">Kode ERP</th>
-                    <th class="text-center fw-bold" style="font-size:.8rem">Nama Barang</th>
-                    <th class="text-center fw-bold text-success" style="font-size:.8rem">Masuk</th>
-                    <th class="text-center fw-bold text-danger" style="font-size:.8rem">Keluar</th>
-                    <th class="text-center fw-bold" style="font-size:.8rem">Netto</th>
+        <div class="modal-body p-0">
+          <div class="table-responsive" style="max-height:60vh;overflow-y:auto">
+            <table class="table table-bordered table-striped mb-0 align-middle text-center small">
+              <thead class="table-light sticky-top shadow-sm">
+                <tr>
+                  <th>KODE ERP</th>
+                  <th class="text-start">LOT</th>
+                  <th>WARNA</th>
+                  <th>JENIS</th>
+                  <th>GRADE</th>
+                  <th class="bg-light text-primary">SALDO AWAL</th>
+                  <th class="text-success">MASUK</th>
+                  <th class="text-danger">KELUAR</th>
+                  <th class="bg-light text-primary">SALDO AKHIR</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template v-if="loading">
+                  <tr><td colspan="9" class="text-center py-5">
+                    <div class="spinner-border text-success"></div>
+                  </td></tr>
+                </template>
+                <template v-else-if="logs.length">
+                  <tr v-for="r in logs" :key="r.kode">
+                    <td class="fw-bold font-monospace">{{ r.kode }}</td>
+                    <td class="text-start">{{ r.nama }}</td>
+                    <td class="small text-muted">{{ r.warna }}</td>
+                    <td class="small text-muted">{{ r.jenis }}</td>
+                    <td class="small text-muted">{{ r.grade }}</td>
+                    <td class="bg-light fw-bold">{{ fmt(r.awal) }}</td>
+                    <td class="text-success">{{ r.masuk > 0 ? fmt(r.masuk) : '-' }}</td>
+                    <td class="text-danger">{{ r.keluar > 0 ? fmt(r.keluar) : '-' }}</td>
+                    <td class="bg-light fw-bold text-primary">{{ fmt(r.akhir) }}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in mutasiData" :key="item.idUnik" :class="item.netto >= 0 ? 'table-success' : 'table-danger'">
-                    <td class="fw-bold text-primary" style="font-size:.8rem">{{ item.kodeErp }}</td>
-                    <td style="font-size:.8rem">{{ item.nama }}</td>
-                    <td class="text-center text-success fw-bold" style="font-size:.85rem">+{{ fmt(item.masuk) }}</td>
-                    <td class="text-center text-danger fw-bold" style="font-size:.85rem">-{{ fmt(item.keluar) }}</td>
-                    <td class="text-center fw-bold" style="font-size:.85rem">
-                      <span :class="item.netto >= 0 ? 'text-success' : 'text-danger'">
-                        {{ item.netto >= 0 ? '+' : '' }}{{ fmt(item.netto) }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-                <tfoot class="bg-light fw-bold">
-                  <tr>
-                    <td colspan="2" class="text-end">TOTAL:</td>
-                    <td class="text-center text-success">+{{ fmt(totalMasuk) }}</td>
-                    <td class="text-center text-danger">-{{ fmt(totalKeluar) }}</td>
-                    <td class="text-center" :class="totalNetto >= 0 ? 'text-success' : 'text-danger'">
-                      {{ totalNetto >= 0 ? '+' : '' }}{{ fmt(totalNetto) }}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-          <!-- EMPTY -->
-          <div v-else class="text-center py-5 text-muted">
-            <i class="fas fa-inbox" style="font-size:2rem;opacity:.3"></i>
-            <p class="mt-2 small">Tidak ada data untuk periode ini</p>
+                </template>
+                <template v-else>
+                  <tr><td colspan="9" class="text-center py-4 text-muted">
+                    Tidak ada data bulan ini
+                  </td></tr>
+                </template>
+              </tbody>
+            </table>
           </div>
         </div>
 
         <!-- FOOTER -->
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-sm btn-success" @click="exportExcel" :disabled="!mutasiData.length">
-            <i class="fas fa-download me-1"></i>Export Excel
-          </button>
-          <button type="button" class="btn btn-sm btn-secondary" @click="$emit('close')">
-            Tutup
-          </button>
+        <div class="modal-footer bg-light py-2 d-flex justify-content-between fw-bold border-top"
+             style="font-size:.9rem">
+          <div class="text-muted text-uppercase small">Total Mutasi Periode Ini</div>
+          <div class="d-flex gap-4">
+            <div class="text-success">Total Masuk: <span class="fs-6">{{ fmt(totalMasuk) }}</span> Kg</div>
+            <div class="text-danger">Total Keluar: <span class="fs-6">{{ fmt(totalKeluar) }}</span> Kg</div>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { ref as dbRef, onValue } from 'firebase/database'
+import { ref, computed, onMounted } from 'vue'
+import { ref as dbRef, get } from 'firebase/database'
 import { db } from '../../firebase'
 import { dbStok } from '../../composables/useStok'
 
 const emit = defineEmits(['close'])
 
-const tglMulai = ref('')
-const tglAkhir = ref('')
-const loading = ref(false)
-const mutasiData = ref([])
+const blnPicker = ref(new Date().toISOString().slice(0, 7))
+const loading   = ref(false)
+const logs      = ref([])
 
 const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
 })
 
-const totalMasuk = computed(() => mutasiData.value.reduce((a, b) => a + (b.masuk || 0), 0))
-const totalKeluar = computed(() => mutasiData.value.reduce((a, b) => a + (b.keluar || 0), 0))
-const totalNetto = computed(() => totalMasuk.value - totalKeluar.value)
+const totalMasuk  = computed(() => logs.value.reduce((s, r) => s + r.masuk, 0))
+const totalKeluar = computed(() => logs.value.reduce((s, r) => s + r.keluar, 0))
 
-const loadMutasi = () => {
-  if (!tglMulai.value || !tglAkhir.value) return
-  
+const loadData = async () => {
+  if (!blnPicker.value) return
   loading.value = true
-  mutasiData.value = []
-  
-  onValue(dbRef(db, 'riwayat_transaksi'), snap => {
-    loading.value = false
-    const all = snap.val()
-    const hasil = {}
-    
-    if (all) {
-      Object.keys(all).forEach(pId => {
-        const item = dbStok.value.find(x => x.idUnik === pId)
-        if (!item) return
-        
-        let masuk = 0, keluar = 0
-        Object.values(all[pId] || {}).forEach(trx => {
-          const tgl = trx.tanggal?.slice(0, 10)
-          if (tgl >= tglMulai.value && tgl <= tglAkhir.value) {
-            const qty = Number(trx.qty) || 0
-            if (trx.tipe === 'MASUK') masuk += qty
-            else if (trx.tipe === 'KELUAR') keluar += qty
+  logs.value = []
+  try {
+    const snap = await get(dbRef(db, 'riwayat_transaksi'))
+    const histories = snap.val() || {}
+    const start = new Date(blnPicker.value + '-01')
+    const end   = new Date(new Date(start).setMonth(start.getMonth() + 1))
+    const result = []
+
+    dbStok.value.forEach(item => {
+      let saldoAwal = Number(item.stokAwal) || 0
+      let masuk = 0, keluar = 0
+
+      Object.values(histories[item.idUnik] || {})
+        .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
+        .forEach(log => {
+          const d = new Date(log.tanggal)
+          const q = Number(log.qty)
+          if (d < start) {
+            if (log.tipe === 'MASUK')  saldoAwal += q
+            else if (log.tipe === 'KELUAR') saldoAwal -= q
+            else if (log.tipe === 'OPNAME') saldoAwal = q
+          } else if (d < end) {
+            if (log.tipe === 'MASUK')  masuk  += q
+            else if (log.tipe === 'KELUAR') keluar += q
           }
         })
-        
-        if (masuk > 0 || keluar > 0) {
-          hasil[pId] = {
-            idUnik: pId,
-            kodeErp: item.kodeErp,
-            nama: item.nama,
-            masuk,
-            keluar,
-            netto: masuk - keluar
-          }
-        }
-      })
-    }
-    
-    mutasiData.value = Object.values(hasil).sort((a, b) => (b.netto || 0) - (a.netto || 0))
-  }, { onlyOnce: true })
+
+      const saldoAkhir = saldoAwal + masuk - keluar
+      if (saldoAwal || masuk || keluar || saldoAkhir) {
+        result.push({
+          kode:   item.kodeErp,
+          nama:   item.nama,
+          warna:  item.warna  || '-',
+          jenis:  item.jenis  || '-',
+          grade:  item.grade  || '-',
+          awal:   saldoAwal,
+          masuk,
+          keluar,
+          akhir:  saldoAkhir
+        })
+      }
+    })
+
+    logs.value = result.sort((a, b) => (a.kode || '').localeCompare(b.kode || ''))
+  } catch(e) {
+    window.Swal.fire('Error', e.message, 'error')
+  } finally {
+    loading.value = false
+  }
 }
 
 const exportExcel = () => {
-  if (!mutasiData.value.length) return
+  if (!logs.value.length) return
   const rows = [
-    ['LAPORAN MUTASI BARANG'],
-    ['Periode:', `${tglMulai.value} s/d ${tglAkhir.value}`],
-    [],
-    ['KODE ERP', 'NAMA BARANG', 'MASUK (KG)', 'KELUAR (KG)', 'NETTO (KG)'],
-    ...mutasiData.value.map(item => [
-      item.kodeErp,
-      item.nama,
-      item.masuk,
-      item.keluar,
-      item.netto
-    ]),
-    [],
-    ['TOTAL', '', totalMasuk.value, totalKeluar.value, totalNetto.value]
+    ['KODE ERP','NAMA BARANG','WARNA','JENIS','GRADE','SALDO AWAL','MASUK','KELUAR','SALDO AKHIR'],
+    ...logs.value.map(r => [r.kode, r.nama, r.warna, r.jenis, r.grade, r.awal, r.masuk, r.keluar, r.akhir])
   ]
   const ws = window.XLSX.utils.aoa_to_sheet(rows)
   const wb = window.XLSX.utils.book_new()
   window.XLSX.utils.book_append_sheet(wb, ws, 'Mutasi')
-  window.XLSX.writeFile(wb, `Laporan_Mutasi_${tglMulai.value}_${tglAkhir.value}.xlsx`)
+  window.XLSX.writeFile(wb, `Mutasi_Stok_${blnPicker.value}.xlsx`)
 }
 
-watch([tglMulai, tglAkhir], () => loadMutasi())
-
-onMounted(() => {
-  const today = new Date()
-  const first = new Date(today.getFullYear(), today.getMonth(), 1)
-  tglMulai.value = first.toISOString().slice(0, 10)
-  tglAkhir.value = today.toISOString().slice(0, 10)
-})
+onMounted(() => loadData())
 </script>
-
-<style scoped>
-.table-sm th { padding: 8px 4px; }
-.table-sm td { padding: 6px 4px; }
-</style>
