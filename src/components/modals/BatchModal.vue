@@ -19,11 +19,11 @@
               <textarea
                 class="form-control font-monospace"
                 rows="3"
-                placeholder="Format: [Kode/Nama]  [Qty]"
+                placeholder="Format: [Kode ERP]  [Qty]"
                 style="border:2px dashed #ccc;background:#f0f8ff;font-size:.85rem"
                 @paste="handlePaste"
               ></textarea>
-              <div class="form-text small text-muted">Paste data 2 Kolom (Item & Qty).</div>
+              <div class="form-text small text-muted">Paste data 2 kolom (Kode ERP & Qty). Dropdown menampilkan: <b>KODE | Stok - Warna</b>.</div>
             </div>
 
             <!-- SETTINGS -->
@@ -72,17 +72,17 @@
                           class="form-control form-control-sm fw-bold"
                           v-model="row.rawKey"
                           :list="`dl_${idx}`"
-                          placeholder="Ketik/Paste..."
+                          placeholder="Ketik Kode ERP..."
                           @change="detectItem(row)"
                         >
                         <datalist :id="`dl_${idx}`">
                           <option v-for="i in dbStok" :key="i.idUnik"
-                                  :value="`${i.kodeErp} | ${i.nama}`">
+                                  :value="`${i.kodeErp} | ${fmt(i.stok)} - ${i.warna}`">
                           </option>
                         </datalist>
                         <div class="small mt-1" :class="row.itemId ? 'text-success' : 'text-danger'">
                           <i :class="row.itemId ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
-                          {{ row.itemId ? `Cocok: ${row.kodeErp}` : 'Tidak ditemukan' }}
+                          {{ row.itemId ? `${row.kodeErp} — ${row.warna}` : 'Tidak ditemukan' }}
                         </div>
                       </td>
                       <td class="text-center small text-muted">{{ row.warna }}</td>
@@ -175,10 +175,9 @@ const totalQty = computed(() =>
 )
 
 const findItem = rawKey => {
-  const val = rawKey.split('|')[0].trim().toUpperCase()
-  return dbStok.value.find(i =>
-    i.kodeErp === val || i.nama.toUpperCase() === val
-  )
+  // Ambil bagian sebelum ' | ' — support format lama maupun baru
+  const kode = rawKey.split('|')[0].trim().toUpperCase()
+  return dbStok.value.find(i => i.kodeErp.toUpperCase() === kode)
 }
 
 const detectItem = row => {
