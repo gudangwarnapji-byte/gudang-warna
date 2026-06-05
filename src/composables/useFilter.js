@@ -5,8 +5,17 @@ export const searchQuery = ref('')
 export const activeJenis = ref(new Set(['Semua']))
 export const activeGrade = ref(new Set(['Semua']))
 export const filterPanelOpen = ref(false)
+export const filterStokKritis = ref(false)
+
+export const kritisList = computed(() =>
+  dbStok.value.filter(i => {
+    const s = parseFloat(i.stok) || 0
+    return s < 5 && (s <= -0.01 || s >= 0.01)
+  })
+)
 
 export const filteredItems = computed(() => {
+  if (filterStokKritis.value) return kritisList.value
   const q = searchQuery.value.toLowerCase()
   const allJ = activeJenis.value.has('Semua')
   const allG = activeGrade.value.has('Semua')
@@ -25,20 +34,14 @@ export const filteredItems = computed(() => {
 export const jenisOptions = computed(() => [
   'Semua',
   ...new Set(
-    dbStok.value
-      .map(i => (i.jenis || '').toUpperCase())
-      .filter(Boolean)
-      .sort()
+    dbStok.value.map(i => (i.jenis || '').toUpperCase()).filter(Boolean).sort()
   )
 ])
 
 export const gradeOptions = computed(() => [
   'Semua',
   ...new Set(
-    dbStok.value
-      .map(i => (i.grade || '').toUpperCase())
-      .filter(Boolean)
-      .sort()
+    dbStok.value.map(i => (i.grade || '').toUpperCase()).filter(Boolean).sort()
   )
 ])
 
@@ -59,15 +62,20 @@ export function useFilter() {
     activeGrade.value = s.size ? s : new Set(['Semua'])
   }
 
+  const toggleStokKritis = () => {
+    filterStokKritis.value = !filterStokKritis.value
+  }
+
   const resetFilter = () => {
     activeJenis.value = new Set(['Semua'])
     activeGrade.value = new Set(['Semua'])
     searchQuery.value = ''
+    filterStokKritis.value = false
   }
 
   const togglePanel = () => {
     filterPanelOpen.value = !filterPanelOpen.value
   }
 
-  return { toggleJenis, toggleGrade, resetFilter, togglePanel }
+  return { toggleJenis, toggleGrade, toggleStokKritis, resetFilter, togglePanel }
 }
