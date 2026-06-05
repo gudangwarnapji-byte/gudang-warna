@@ -39,6 +39,7 @@
   ref="dailyModalRef"
   @close="showDailyModal = false" 
 />
+      <SelisihModal v-if="showSelisihModal" @close="showSelisihModal = false" />
       <MutasiModal v-if="showMutasiModal" @close="showMutasiModal = false" />
       <BulananModal v-if="showBulananModal" @close="showBulananModal = false" />
       <AddModal v-if="showAddModal" @close="showAddModal = false" />
@@ -71,7 +72,8 @@ import BatchModal from './components/modals/BatchModal.vue'
 import { showBatchModal } from './composables/useBatch'
 import EditTransModal from './components/modals/EditTransModal.vue'
 import { activeEditTrans } from './composables/useEditTrans'
-  
+import SelisihModal from './components/modals/SelisihModal.vue'
+import { showSelisihModal } from './composables/useSelisih'  
 import LoginView from './components/LoginView.vue'
 import NavBar from './components/NavBar.vue'
 import StickySearch from './components/StickySearch.vue'
