@@ -94,8 +94,8 @@
 <script setup>
 import { computed } from 'vue'
 import {
-  searchQuery, activeJenis, activeGrade, filterStokKritis,
-  filterPanelOpen, filteredItems, kritisList,
+  searchQuery, activeJenis, activeGrade,
+  filterPanelOpen, filteredItems,
   jenisOptions, gradeOptions,
   useFilter
 } from '../composables/useFilter'
