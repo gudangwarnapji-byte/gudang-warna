@@ -95,6 +95,7 @@
 import { computed } from 'vue'
 import {
   searchQuery, activeJenis, activeGrade,
+  filterStokKritis, kritisList,
   filterPanelOpen, filteredItems,
   jenisOptions, gradeOptions,
   useFilter
