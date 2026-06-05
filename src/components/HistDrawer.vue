@@ -13,25 +13,36 @@
         <div class="handle-bar"></div>
       </div>
 
-      <!-- HEADER -->
-      <div class="px-3 pb-2 border-bottom flex-shrink-0">
-        <div class="d-flex justify-content-between align-items-start">
-          <div style="min-width:0;flex:1;margin-right:10px">
-            <h6 class="fw-bold mb-0 text-truncate" style="font-size:1rem">
-              {{ activeItem?.nama || 'Riwayat' }}
-            </h6>
-            <div class="d-flex align-items-center gap-2 mt-1">
-              <small class="text-muted" style="font-size:.75rem">
-                {{ activeItem?.kodeErp }}
-              </small>
-              <span class="hist-stok-badge">
-                Stok: {{ fmt(activeItem?.stok) }} Kg
-              </span>
-            </div>
-          </div>
-          <button class="btn-close" @click="$emit('close')"></button>
-        </div>
+<!-- HEADER -->
+<div class="px-3 pb-2 border-bottom flex-shrink-0">
+  <div class="d-flex justify-content-between align-items-start">
+
+    <!-- Kiri: nama + kode + stok badge -->
+    <div style="min-width:0;flex:1;margin-right:10px">
+      <h6 class="fw-bold mb-0 text-truncate" style="font-size:1rem">
+        {{ activeItem?.nama || 'Riwayat' }}
+      </h6>
+      <div class="d-flex align-items-center gap-2 mt-1">
+        <small class="text-muted" style="font-size:.75rem">
+          {{ activeItem?.kodeErp }}
+        </small>
+        <span class="hist-stok-badge">
+          Stok: {{ fmt(activeItem?.stok) }} Kg
+        </span>
       </div>
+    </div>
+
+    <!-- Kanan: tombol export + close -->
+    <div class="d-flex gap-2 align-items-center flex-shrink-0">
+      <button class="btn btn-sm btn-outline-success rounded-pill px-3"
+              @click="exportKartuStok">
+        <i class="fas fa-file-excel"></i>
+      </button>
+      <button class="btn-close" @click="$emit('close')"></button>
+    </div>
+
+  </div>
+</div>
 
       <!-- MONTH CHIPS -->
       <div class="chips-wrap">
@@ -115,6 +126,7 @@
 </template>
 
 <script setup>
+
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { ref as dbRef, onValue } from 'firebase/database'
 import { db } from '../firebase'
@@ -169,7 +181,48 @@ const formatDate = iso => new Date(iso).toLocaleDateString('id-ID', {
 const formatTime = iso => new Date(iso).toLocaleTimeString('id-ID', {
   hour: '2-digit', minute: '2-digit'
 })
+const exportKartuStok = () => {
+  if (!activeHistId.value) return
+  const item = dbStok.value.find(x => x.idUnik === activeHistId.value)
+  if (!item) return
 
+  const allRows = Object.values(allLogs.value)
+    .flat()
+    .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
+
+  if (!allRows.length) {
+    window.Swal.fire('Kosong', 'Belum ada riwayat transaksi.', 'info')
+    return
+  }
+
+  const rows = [
+    ['KARTU STOK'],
+    ['Nama / Lot', `: ${item.nama}`],
+    ['Kode ERP',   `: ${item.kodeErp}`],
+    ['Warna',      `: ${item.warna || '-'}`],
+    ['Jenis',      `: ${item.jenis || '-'}`],
+    ['Grade',      `: ${item.grade || '-'}`],
+    [],
+    ['TANGGAL', 'JAM', 'TIPE', 'KETERANGAN', 'QTY (KG)', 'SALDO (KG)'],
+    ...allRows.map(r => {
+      const d = new Date(r.tanggal)
+      return [
+        d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+        d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        r.tipe,
+        (r.keterangan || '-').toUpperCase(),
+        parseFloat(r.qty) || 0,
+        parseFloat(r.calculatedBal) || 0
+      ]
+    })
+  ]
+
+  const ws = window.XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 25 }, { wch: 12 }, { wch: 12 }]
+  const wb = window.XLSX.utils.book_new()
+  window.XLSX.utils.book_append_sheet(wb, ws, 'Kartu_Stok')
+  window.XLSX.writeFile(wb, `KartuStok_${item.kodeErp}_${item.nama}.xlsx`.replace(/[\/\\:*?"<>|]/g, '_'))
+}
 const loadHistoryData = (id) => {
   if (!id) return
   
@@ -228,14 +281,25 @@ onUnmounted(() => {
 
 <style scoped>
 .hist-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.5); z-index: 1050;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 1050;
 }
 .hist-drawer {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: #fff; border-radius: 16px 16px 0 0;
-  border-top: 1px solid #dee2e6; z-index: 1055;
-  max-height: 88vh; display: flex; flex-direction: column;
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  width: 100%;
+  max-width: 600px;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  border-top: 1px solid #dee2e6;
+  z-index: 1055;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
 }
 .drag-handle {
   padding: 10px 0 4px; display: flex;
