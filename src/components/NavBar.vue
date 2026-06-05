@@ -98,6 +98,7 @@ const { bukaAddModal } = useAdd()
 const { doLogout } = useAuth()
 const { refreshData } = useStok()
 const { bukaDaily } = useDaily()
+import { useMutasi, showMutasiModal } from '../composables/useMutasi'
 const { bukaMutasi } = useMutasi()
 const { bukaBulanan } = useBulanan()
 
