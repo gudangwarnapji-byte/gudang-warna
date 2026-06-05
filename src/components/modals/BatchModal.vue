@@ -20,12 +20,10 @@
                 class="form-control font-monospace"
                 rows="2"
                 placeholder="Format: [Teks Mentah Nama/Kode]  [Qty]"
-                style="border:2px dashed #ccc;background:#f0f8ff;font-size:.85rem"
+                style="border:2px dashed #ccc;background:#f0f8ff;font-size:.85rem;min-height:80px;resize:vertical;padding:15px"
                 @paste="handlePaste"
               ></textarea>
-              <div class="form-text small text-muted">
-                Paste data 2 kolom (Item &amp; Qty). Ketik bebas — sistem cari otomatis by Kode, Nama, atau Warna.
-              </div>
+              <div class="form-text small text-muted">Paste data 2 Kolom (Item &amp; Qty).</div>
             </div>
 
             <!-- SETTINGS -->
@@ -59,10 +57,10 @@
                     <tr>
                       <th style="width:5%">#</th>
                       <th style="width:40%">TEKS DARI EXCEL / PENCARIAN SISTEM</th>
-                      <th style="width:18%">WARNA</th>
-                      <th style="width:14%">QTY (KG)</th>
-                      <th style="width:18%">PREVIEW SALDO</th>
-                      <th style="width:5%">X</th>
+                      <th style="width:20%">WARNA</th>
+                      <th style="width:15%">QTY INPUT (KG)</th>
+                      <th style="width:15%">PREVIEW SALDO</th>
+                      <th style="width:5%">AKSI</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -70,7 +68,7 @@
                         :class="row.itemId ? '' : 'table-warning'">
                       <td class="text-center fw-bold text-muted">{{ idx + 1 }}</td>
 
-                      <!-- INPUT + CUSTOM DROPDOWN -->
+                      <!-- INPUT + DROPDOWN -->
                       <td style="position:relative">
                         <input
                           class="form-control form-control-sm fw-bold"
@@ -83,13 +81,10 @@
                           @keydown.down.prevent="moveDown(idx)"
                           @keydown.up.prevent="moveUp(idx)"
                           @keydown.enter.prevent="pilihSuggestion(idx)"
-                          @keydown.escape="tutupDropdown(idx)"
+                          @keydown.escape="activeDrop = -1"
                         >
-                        <!-- DROPDOWN SUGGESTIONS -->
-                        <div
-                          v-if="activeDrop === idx && suggestions[idx]?.length"
-                          class="ac-dropdown"
-                        >
+                        <!-- DROPDOWN -->
+                        <div v-if="activeDrop === idx && suggestions[idx]?.length" class="ac-dropdown">
                           <div
                             v-for="(sug, si) in suggestions[idx]"
                             :key="sug.idUnik"
@@ -98,15 +93,16 @@
                           >
                             <span class="ac-kode">{{ sug.kodeErp }}</span>
                             <span class="ac-sep">|</span>
-                            <span class="ac-stok">{{ fmt(sug.stok) }}</span>
-                            <span class="ac-dash">-</span>
+                            <span class="ac-nama">{{ sug.nama }}</span>
+                            <span class="ac-sep">-</span>
                             <span class="ac-warna">{{ sug.warna || '-' }}</span>
+                            <span class="ac-stok ms-auto">{{ fmt(sug.stok) }} Kg</span>
                           </div>
                         </div>
                         <!-- STATUS -->
                         <div class="small mt-1" :class="row.itemId ? 'text-success' : 'text-danger'">
                           <i :class="row.itemId ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
-                          {{ row.itemId ? `${row.kodeErp} — ${row.warna}` : 'Tidak ditemukan' }}
+                          {{ row.itemId ? `Cocok: ${row.kodeErp}` : 'Tidak ditemukan' }}
                         </div>
                       </td>
 
@@ -115,24 +111,27 @@
 
                       <!-- QTY -->
                       <td>
-                        <input type="number" step="any"
-                               class="form-control form-control-sm text-center fw-bold border-primary"
-                               v-model="row.qty">
+                        <input
+                          type="number" step="any"
+                          class="form-control form-control-lg text-center fw-bold border-primary"
+                          v-model="row.qty"
+                          placeholder="0"
+                        >
                       </td>
 
                       <!-- PREVIEW -->
-                      <td class="text-center small">
-                        <span v-if="row.itemId && row.qty">
-                          <span class="text-muted">{{ fmt(row.currentStok) }}</span>
+                      <td class="align-middle text-center">
+                        <div v-if="row.itemId && row.qty" class="fw-bold" style="font-size:1.1rem">
+                          <span class="text-muted" style="font-size:.8rem">{{ fmt(row.currentStok) }}</span>
                           <i class="fas fa-arrow-right text-muted mx-1" style="font-size:.7rem"></i>
                           <span :class="previewColor">{{ fmt(previewSaldo(row)) }}</span>
-                        </span>
+                        </div>
                         <span v-else class="text-muted">-</span>
                       </td>
 
                       <!-- HAPUS -->
                       <td class="text-center">
-                        <button class="btn btn-sm text-danger" @click="rows.splice(idx, 1)">
+                        <button class="btn text-danger" @click="rows.splice(idx, 1)">
                           <i class="fas fa-times"></i>
                         </button>
                       </td>
@@ -141,8 +140,8 @@
                 </table>
               </div>
               <div class="d-flex justify-content-end gap-3 mt-2">
-                <span class="fw-bold text-muted small">{{ validCount }} Item Valid</span>
-                <span class="fw-bold text-primary small">Total: {{ fmt(totalQty) }} Kg</span>
+                <div class="fw-bold text-muted small">{{ validCount }} Item Valid</div>
+                <div class="fw-bold text-primary small">Total Input: {{ fmt(totalQty) }} Kg</div>
               </div>
             </div>
 
@@ -151,7 +150,7 @@
 
         <!-- FOOTER -->
         <div class="modal-footer bg-light">
-          <button class="btn btn-lg btn-success fw-bold w-100 shadow"
+          <button class="btn btn-lg btn-success fw-bold px-5 shadow w-100"
                   :disabled="!validCount || submitting"
                   @click="submit">
             {{ submitting ? 'Memproses...' : 'PROSES SEKARANG' }}
@@ -178,17 +177,14 @@ const globalKet  = ref('')
 const submitting = ref(false)
 const rows       = ref([])
 
-// Dropdown state per baris
-const activeDrop   = ref(-1)   // index baris yang dropdownnya terbuka
-const suggestions  = reactive({}) // { idx: [...items] }
-const highlightIdx = reactive({}) // { idx: number }
+const activeDrop   = ref(-1)
+const suggestions  = reactive({})
+const highlightIdx = reactive({})
 
-// ── FORMAT ──
 const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
 })
 
-// ── PREVIEW ──
 const previewColor = computed(() => ({
   'text-success': globalTipe.value === 'MASUK',
   'text-danger':  globalTipe.value === 'KELUAR',
@@ -203,7 +199,6 @@ const previewSaldo = row => {
   return q
 }
 
-// ── COUNT ──
 const validCount = computed(() =>
   rows.value.filter(r => r.itemId && parseFloat(r.qty) > 0).length
 )
@@ -211,31 +206,24 @@ const totalQty = computed(() =>
   rows.value.reduce((sum, r) => sum + (parseFloat(r.qty) || 0), 0)
 )
 
-// ── FUZZY SEARCH: cari di kodeErp, nama, warna ──
-const cariSuggestions = (q) => {
+const cariSuggestions = q => {
   if (!q || q.length < 1) return []
   const val = q.toUpperCase()
   return dbStok.value.filter(i =>
     (i.kodeErp || '').toUpperCase().includes(val) ||
     (i.nama    || '').toUpperCase().includes(val) ||
     (i.warna   || '').toUpperCase().includes(val)
-  ).slice(0, 10) // max 10 suggestions
+  ).slice(0, 10)
 }
 
-// ── EVENT HANDLERS ──
 const onInput = (row, idx) => {
-  // Reset item jika user edit manual
-  row.itemId      = ''
-  row.kodeErp     = ''
-  row.warna       = ''
-  row.currentStok = 0
-
+  row.itemId = ''; row.kodeErp = ''; row.warna = ''; row.currentStok = 0
   suggestions[idx]  = cariSuggestions(row.rawKey)
   highlightIdx[idx] = -1
   activeDrop.value  = suggestions[idx].length ? idx : -1
 }
 
-const onFocus = (idx) => {
+const onFocus = idx => {
   const row = rows.value[idx]
   if (row.rawKey && !row.itemId) {
     suggestions[idx] = cariSuggestions(row.rawKey)
@@ -243,87 +231,47 @@ const onFocus = (idx) => {
   }
 }
 
-const onBlur = (idx) => {
-  // Delay supaya mousedown sempat diproses dulu
-  setTimeout(() => {
-    if (activeDrop.value === idx) activeDrop.value = -1
-  }, 150)
+const onBlur = idx => {
+  setTimeout(() => { if (activeDrop.value === idx) activeDrop.value = -1 }, 150)
 }
 
-const tutupDropdown = (idx) => {
-  activeDrop.value = -1
-}
-
-// Navigasi keyboard
-const moveDown = (idx) => {
+const moveDown = idx => {
   const max = (suggestions[idx]?.length || 0) - 1
   highlightIdx[idx] = Math.min((highlightIdx[idx] ?? -1) + 1, max)
 }
-const moveUp = (idx) => {
+const moveUp = idx => {
   highlightIdx[idx] = Math.max((highlightIdx[idx] ?? 0) - 1, 0)
 }
-const pilihSuggestion = (idx) => {
+const pilihSuggestion = idx => {
   const hi = highlightIdx[idx] ?? -1
-  if (hi >= 0 && suggestions[idx]?.[hi]) {
-    pilihItem(rows.value[idx], idx, suggestions[idx][hi])
-  }
+  if (hi >= 0 && suggestions[idx]?.[hi]) pilihItem(rows.value[idx], idx, suggestions[idx][hi])
 }
 
-// Klik atau Enter pada suggestion
 const pilihItem = (row, idx, item) => {
-  row.rawKey      = `${item.kodeErp} | ${fmt(item.stok)} - ${item.warna}`
+  row.rawKey      = item.kodeErp
   row.itemId      = item.idUnik
   row.kodeErp     = item.kodeErp
   row.warna       = item.warna || ''
   row.currentStok = parseFloat(item.stok) || 0
-  activeDrop.value        = -1
-  suggestions[idx]        = []
-  highlightIdx[idx]       = -1
+  activeDrop.value  = -1
+  suggestions[idx]  = []
+  highlightIdx[idx] = -1
 }
 
-// ── FUZZY MATCH untuk paste: cari item paling mirip ──
-const fuzzyMatch = (rawKey) => {
+const fuzzyMatch = rawKey => {
   const val = rawKey.toUpperCase()
-  // 1. exact kode ERP
-  let found = dbStok.value.find(i => i.kodeErp.toUpperCase() === val)
-  if (found) return found
-  // 2. exact nama
-  found = dbStok.value.find(i => (i.nama || '').toUpperCase() === val)
-  if (found) return found
-  // 3. kode ERP contains
-  found = dbStok.value.find(i => i.kodeErp.toUpperCase().includes(val))
-  if (found) return found
-  // 4. nama contains
-  found = dbStok.value.find(i => (i.nama || '').toUpperCase().includes(val))
-  if (found) return found
-  // 5. warna contains
-  found = dbStok.value.find(i => (i.warna || '').toUpperCase().includes(val))
-  if (found) return found
-  return null
+  return dbStok.value.find(i => i.kodeErp.toUpperCase() === val) ||
+         dbStok.value.find(i => (i.nama || '').toUpperCase() === val) ||
+         dbStok.value.find(i => i.kodeErp.toUpperCase().includes(val)) ||
+         dbStok.value.find(i => (i.nama || '').toUpperCase().includes(val)) ||
+         dbStok.value.find(i => (i.warna || '').toUpperCase().includes(val)) ||
+         null
 }
 
-const applyItem = (row, item) => {
-  if (item) {
-    row.itemId      = item.idUnik
-    row.kodeErp     = item.kodeErp
-    row.warna       = item.warna || ''
-    row.currentStok = parseFloat(item.stok) || 0
-    // rawKey TIDAK diubah — biarkan teks asli dari paste
-  } else {
-    row.itemId      = ''
-    row.kodeErp     = ''
-    row.warna       = ''
-    row.currentStok = 0
-    // rawKey tetap teks asli supaya user tahu mana yang tidak cocok
-  }
-}
-
-// ── ROWS ──
 const addEmptyRow = () => {
   rows.value.push({ rawKey: '', itemId: '', kodeErp: '', warna: '', qty: '', currentStok: 0 })
 }
 
-// ── PASTE HANDLER ──
 const handlePaste = e => {
   e.preventDefault()
   const pasted = (e.clipboardData || window.clipboardData).getData('text')
@@ -335,19 +283,35 @@ const handlePaste = e => {
     if (cols.length === 1) cols = line.split(/\s{2,}/)
     const rawKey = (cols[0] || '').trim()
     const qty    = parseFloat((cols[1] || '').trim().replace(',', '.'))
-    const row    = { rawKey, itemId: '', kodeErp: '', warna: '', qty: isNaN(qty) ? '' : qty, currentStok: 0 }
-    applyItem(row, fuzzyMatch(rawKey))
+    const item   = fuzzyMatch(rawKey)
+    const row    = {
+      rawKey,
+      itemId:      item ? item.idUnik   : '',
+      kodeErp:     item ? item.kodeErp  : '',
+      warna:       item ? item.warna    : '',
+      currentStok: item ? parseFloat(item.stok) || 0 : 0,
+      qty: isNaN(qty) ? '' : qty
+    }
     rows.value.push(row)
   })
 }
 
-// Init 5 baris kosong
 for (let i = 0; i < 5; i++) addEmptyRow()
 
-// ── SUBMIT ──
 const submit = async () => {
   const valid = rows.value.filter(r => r.itemId && parseFloat(r.qty) > 0)
   if (!valid.length) return
+
+  const confirm = await window.Swal.fire({
+    title: `Proses ${valid.length} Item?`,
+    html: `Tipe: <b>${globalTipe.value}</b><br>Total: <b>${fmt(totalQty.value)} Kg</b>`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#198754',
+    confirmButtonText: 'Ya, Proses!'
+  })
+  if (!confirm.isConfirmed) return
+
   submitting.value = true
   try {
     const updates = {}
@@ -385,12 +349,10 @@ const submit = async () => {
 </script>
 
 <style scoped>
-/* ── CUSTOM AUTOCOMPLETE DROPDOWN ── */
 .ac-dropdown {
   position: absolute;
   top: calc(100% - 22px);
-  left: 0;
-  right: 0;
+  left: 0; right: 0;
   background: #fff;
   border: 1.5px solid #0d6efd;
   border-top: none;
@@ -411,11 +373,10 @@ const submit = async () => {
   transition: background .1s;
 }
 .ac-item:last-child { border-bottom: none; }
-.ac-item:hover,
-.ac-active { background: #e7f1ff; }
-.ac-kode  { font-weight: 700; color: #1e3c72; min-width: 130px; font-family: monospace; font-size: .83rem; }
+.ac-item:hover, .ac-active { background: #e7f1ff; }
+.ac-kode  { font-weight: 700; color: #1e3c72; min-width: 120px; font-family: monospace; }
+.ac-nama  { color: #333; flex: 1; font-size: .78rem; }
 .ac-sep   { color: #aaa; }
-.ac-stok  { font-weight: 700; color: #198754; min-width: 70px; text-align: right; }
-.ac-dash  { color: #aaa; }
-.ac-warna { color: #495057; flex: 1; }
+.ac-warna { color: #6c757d; font-size: .78rem; }
+.ac-stok  { font-weight: 700; color: #198754; font-size: .78rem; white-space: nowrap; }
 </style>
