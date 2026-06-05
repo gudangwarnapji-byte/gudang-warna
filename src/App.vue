@@ -34,7 +34,11 @@
       </div>
 <TransModal v-if="showTransModal" @close="activeTrans = null" />
       <HistDrawer v-show="showHistDrawer" @close="activeHistId = ''" />
-      <DailyModal v-if="showDailyModal" @close="showDailyModal = false" />
+<DailyModal 
+  v-if="showDailyModal" 
+  ref="dailyModalRef"
+  @close="showDailyModal = false" 
+/>
       <MutasiModal v-if="showMutasiModal" @close="showMutasiModal = false" />
       <BulananModal v-if="showBulananModal" @close="showBulananModal = false" />
       <AddModal v-if="showAddModal" @close="showAddModal = false" />
@@ -124,8 +128,11 @@ const onLokasi = (id) => {
   })
 }
 
+const dailyModalRef = ref(null)
+
 const onEditSaved = () => {
-  // riwayat reload otomatis
+  histDrawerRef.value?.reloadHist()
+  dailyModalRef.value?.loadData()
 }
 
 const handleOffline = () => { isOffline.value = true }
