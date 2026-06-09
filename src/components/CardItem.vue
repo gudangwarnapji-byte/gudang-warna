@@ -14,22 +14,24 @@
         </div>
       </div>
 
-      <!-- INFO -->
-      <div class="mb-3">
-        <small class="text-muted d-block mb-2">
-          {{ item.warna }} | <b>{{ item.kodeErp }}</b>
-        </small>
-<div class="d-flex gap-2 mt-1">
-  <div v-if="namaBlok" class="blok-pill">
-    <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
-    Blok {{ namaBlok }}
-  </div>
-  <div v-else class="blok-pill-empty">
-    <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
-    Belum ada blok
+<!-- INFO -->
+<div class="mb-3">
+  <small class="text-muted d-block mb-2">
+    {{ item.warna }} | <b>{{ item.kodeErp }}</b>
+  </small>
+  <div class="d-flex gap-2 mt-1">
+    <div v-if="namaBlok" class="blok-pill">
+      <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
+      Blok {{ namaBlok }}
+    </div>
+    <div v-else class="blok-pill-empty">
+      <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
+      Belum ada blok
+    </div>
   </div>
 </div>
-      <!-- STOK -->
+
+<!-- STOK -->
       <div class="stok-box mb-3 shadow-sm">
         <div class="small text-muted fw-bold" style="font-size:.65rem">STOK SAAT INI</div>
         <div :class="['stok-number', isCritical ? 'text-danger' : 'text-safe']">
