@@ -17,29 +17,35 @@
       <div class="container">
         <StickySearch />
         <div class="row g-3 mt-1">
+          <CardItem
+            v-for="item in visibleItems"
+            :key="item.idUnik"
+            :item="item"
+            :velocity="itemVelocity[item.idUnik]"
+            :role="currentRole"
+            @transaksi="onTransaksi"
+            @riwayat="onRiwayat"
+          />
         </div>
         <div v-if="!filteredItems.length" class="text-center py-5 text-muted">
           <h5>Data Kosong / Tidak Ditemukan</h5>
         </div>
       </div>
-<TransModal v-if="showTransModal" @close="activeTrans = null" />
-      <HistDrawer v-show="showHistDrawer" @close="activeHistId = ''" />
-<DailyModal 
-  v-if="showDailyModal" 
-  ref="dailyModalRef"
-  @close="showDailyModal = false" 
-/>
+      <TransModal v-if="showTransModal" @close="activeTrans = null" />
+      <HistDrawer v-show="showHistDrawer" ref="histDrawerRef" @close="activeHistId = ''" />
+      <DailyModal v-if="showDailyModal" ref="dailyModalRef" @close="showDailyModal = false" />
       <SuratJalanModal v-if="showSuratJalanModal" @close="showSuratJalanModal = false" />
       <SelisihModal v-if="showSelisihModal" @close="showSelisihModal = false" />
       <MutasiModal v-if="showMutasiModal" @close="showMutasiModal = false" />
       <BulananModal v-if="showBulananModal" @close="showBulananModal = false" />
       <AddModal v-if="showAddModal" @close="showAddModal = false" />
       <BatchModal v-if="showBatchModal" @close="showBatchModal = false" />
+      <BlokModal v-if="showBlokModal" @close="showBlokModal = false" />
       <EditTransModal
-  v-if="activeEditTrans"
-  @close="activeEditTrans = null"
-  @saved="onEditSaved"
-/>
+        v-if="activeEditTrans"
+        @close="activeEditTrans = null"
+        @saved="onEditSaved"
+      />
     </template>
   </div>
 </template>
@@ -51,84 +57,82 @@ import { useStok, itemVelocity, loading } from './composables/useStok'
 import { filteredItems } from './composables/useFilter'
 import { useTrans, activeTrans } from './composables/useTrans'
 import { useHist, activeHistId } from './composables/useHist'
-import DailyModal from './components/modals/DailyModal.vue'
-import { useDaily, showDailyModal } from './composables/useDaily'
-import MutasiModal from './components/modals/MutasiModal.vue'
-import { useMutasi, showMutasiModal } from './composables/useMutasi'
-import BulananModal from './components/modals/BulananModal.vue'
-import { useBulanan, showBulananModal } from './composables/useBulanan'
-import AddModal from './components/modals/AddModal.vue'
-import { showAddModal } from './composables/useAdd'
-import BatchModal from './components/modals/BatchModal.vue'
-import { showBatchModal } from './composables/useBatch'
-import EditTransModal from './components/modals/EditTransModal.vue'
-import { activeEditTrans } from './composables/useEditTrans'
-import SelisihModal from './components/modals/SelisihModal.vue'
-import { showSelisihModal } from './composables/useSelisih'  
+import { loadMasterBlok } from './composables/useBlok'
+
 import LoginView from './components/LoginView.vue'
 import NavBar from './components/NavBar.vue'
 import StickySearch from './components/StickySearch.vue'
 import CardItem from './components/CardItem.vue'
 import TransModal from './components/modals/TransModal.vue'
 import HistDrawer from './components/HistDrawer.vue'
+import DailyModal from './components/modals/DailyModal.vue'
+import MutasiModal from './components/modals/MutasiModal.vue'
+import BulananModal from './components/modals/BulananModal.vue'
+import AddModal from './components/modals/AddModal.vue'
+import BatchModal from './components/modals/BatchModal.vue'
+import EditTransModal from './components/modals/EditTransModal.vue'
+import SelisihModal from './components/modals/SelisihModal.vue'
 import SuratJalanModal from './components/modals/SuratJalanModal.vue'
+import BlokModal from './components/modals/BlokModal.vue'
+
+import { showDailyModal } from './composables/useDaily'
+import { showMutasiModal } from './composables/useMutasi'
+import { showBulananModal } from './composables/useBulanan'
+import { showAddModal } from './composables/useAdd'
+import { showBatchModal } from './composables/useBatch'
+import { activeEditTrans } from './composables/useEditTrans'
+import { showSelisihModal } from './composables/useSelisih'
 import { showSuratJalanModal } from './composables/useSuratJalan'
-  
+import { showBlokModal } from './composables/useBlok'
+
 const { initAuth } = useAuth()
 const { refreshData } = useStok()
 const { bukaRiwayat } = useHist()
 const { bukaTransaksi } = useTrans()
 
-const currentUser = ref(null)
-const authReady = ref(false)
-const isOffline = ref(false)
-const itemsToShow = ref(30)
+const currentUser  = ref(null)
+const authReady    = ref(false)
+const isOffline    = ref(false)
+const itemsToShow  = ref(30)
+const histDrawerRef = ref(null)
+const dailyModalRef = ref(null)
 
-const visibleItems = computed(() => filteredItems.value.slice(0, itemsToShow.value))
+const visibleItems   = computed(() => filteredItems.value.slice(0, itemsToShow.value))
 const showTransModal = computed(() => !!activeTrans.value)
 const showHistDrawer = computed(() => !!activeHistId.value)
 
 initAuth(user => {
   currentUser.value = user
-  authReady.value = true
-  if (user) refreshData()
+  authReady.value   = true
+  if (user) {
+    refreshData()
+    loadMasterBlok()
+  }
 })
 
-const onTransaksi = (tipe, item) => {
-  console.log('onTransaksi:', tipe, item.nama)
-  bukaTransaksi(tipe, item)
-}
-
-const onRiwayat = (id) => {
-  console.log('onRiwayat:', id)
-  bukaRiwayat(id)
-}
-
-const dailyModalRef = ref(null)
-
+const onTransaksi = (tipe, item) => bukaTransaksi(tipe, item)
+const onRiwayat   = (id) => bukaRiwayat(id)
 const onEditSaved = () => {
   histDrawerRef.value?.reloadHist()
   dailyModalRef.value?.loadData()
 }
 
 const handleOffline = () => { isOffline.value = true }
-const handleOnline = () => { isOffline.value = false }
+const handleOnline  = () => { isOffline.value = false }
 
 onMounted(() => {
   window.addEventListener('offline', handleOffline)
-  window.addEventListener('online', handleOnline)
+  window.addEventListener('online',  handleOnline)
   window.addEventListener('scroll', () => {
     if (window.scrollY + window.innerHeight > document.body.scrollHeight - 250) {
-      if (itemsToShow.value < filteredItems.value.length) {
-        itemsToShow.value += 20
-      }
+      if (itemsToShow.value < filteredItems.value.length) itemsToShow.value += 20
     }
   })
 })
 
 onUnmounted(() => {
   window.removeEventListener('offline', handleOffline)
-  window.removeEventListener('online', handleOnline)
+  window.removeEventListener('online',  handleOnline)
 })
 </script>
 
