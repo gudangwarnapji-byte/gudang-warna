@@ -17,16 +17,6 @@
       <div class="container">
         <StickySearch />
         <div class="row g-3 mt-1">
-          <CardItem
-            v-for="item in visibleItems"
-            :key="item.idUnik"
-            :item="item"
-            :velocity="itemVelocity[item.idUnik]"
-            :role="currentRole"
-            @transaksi="onTransaksi"
-            @riwayat="onRiwayat"
-            @lokasi="onLokasi"
-          />
         </div>
         <div v-if="!filteredItems.length" class="text-center py-5 text-muted">
           <h5>Data Kosong / Tidak Ditemukan</h5>
@@ -112,25 +102,6 @@ const onTransaksi = (tipe, item) => {
 const onRiwayat = (id) => {
   console.log('onRiwayat:', id)
   bukaRiwayat(id)
-}
-
-const onLokasi = (id) => {
-  if (currentRole.value !== 'admin') return
-  const item = filteredItems.value.find(x => x.idUnik === id)
-  window.Swal.fire({
-    title: 'Update Lokasi',
-    input: 'text',
-    inputValue: item?.lokasi || '',
-    inputLabel: 'Contoh: A-01, B-05',
-    showCancelButton: true,
-    confirmButtonText: 'Simpan',
-    confirmButtonColor: '#1e3c72'
-  }).then(result => {
-    if (result.isConfirmed) {
-      const { updateLokasi } = useStok()
-      updateLokasi(id, result.value)
-    }
-  })
 }
 
 const dailyModalRef = ref(null)
