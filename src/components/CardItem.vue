@@ -19,15 +19,16 @@
         <small class="text-muted d-block mb-2">
           {{ item.warna }} | <b>{{ item.kodeErp }}</b>
         </small>
-        <div
-          :class="['badge-loc', item.lokasi ? 'filled' : 'empty']"
-          @click="$emit('lokasi', item.idUnik, item.lokasi || '')"
-        >
-          <template v-if="item.lokasi">LOKASI: {{ item.lokasi }}</template>
-          <template v-else><i class="fas fa-plus-circle"></i> Set Lokasi</template>
-        </div>
-      </div>
-
+<div class="d-flex gap-2 mt-1">
+  <div v-if="namaBlok" class="blok-pill">
+    <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
+    Blok {{ namaBlok }}
+  </div>
+  <div v-else class="blok-pill-empty">
+    <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
+    Belum ada blok
+  </div>
+</div>
       <!-- STOK -->
       <div class="stok-box mb-3 shadow-sm">
         <div class="small text-muted fw-bold" style="font-size:.65rem">STOK SAAT INI</div>
@@ -70,8 +71,6 @@ const props = defineProps({
   velocity: String,
   role: String
 })
-
-defineEmits(['transaksi', 'riwayat', 'lokasi'])
 
 const fmt = n => Number(n).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
@@ -124,4 +123,18 @@ const velocityBadge = computed(() => {
 .badge-loc:active { transform: scale(.95); }
 .badge-loc.filled { background: #212529; color: #fff; border-color: #212529; }
 .badge-loc.empty  { background: #fff; color: #999; }
+.blok-pill {
+  display: inline-flex; align-items: center;
+  font-size: .75rem; font-weight: 600;
+  padding: 4px 10px; border-radius: 6px;
+  background: #E6F1FB; color: #0C447C;
+  border: 1px solid #B5D4F4;
+}
+.blok-pill-empty {
+  display: inline-flex; align-items: center;
+  font-size: .75rem; font-weight: 600;
+  padding: 4px 10px; border-radius: 6px;
+  background: #f8f9fa; color: #6c757d;
+  border: 1px dashed #dee2e6;
+}
 </style>
