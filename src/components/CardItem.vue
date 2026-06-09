@@ -69,21 +69,13 @@
 import { computed } from 'vue'
 import { masterBlok } from '../composables/useBlok'
 
-const namaBlok = computed(() => {
-  if (!props.item?.lokasi) return ''
-  if (!masterBlok.value?.length) return ''
-  const blok = masterBlok.value.find(b =>
-    b.nama === (props.item.lokasi || '').toUpperCase()
-  )
-  return blok ? blok.nama : ''
-})
-import { computed } from 'vue'
-
 const props = defineProps({
   item: Object,
   velocity: String,
   role: String
 })
+
+defineEmits(['transaksi', 'riwayat'])
 
 const fmt = n => Number(n).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
@@ -110,44 +102,13 @@ const velocityBadge = computed(() => {
   if (v === 'SLOW')   return '<span class="badge bg-warning text-dark badge-custom ms-1 fw-bold">SLOW</span>'
   return '<span class="badge bg-secondary badge-custom ms-1 fw-bold">DEAD</span>'
 })
-</script>
 
-<style scoped>
-.card-item {
-  border: none; border-radius: 12px;
-  box-shadow: 0 2px 5px rgba(0,0,0,.05);
-  transition: transform .2s;
-}
-.card-item:active { transform: scale(.98); }
-.stok-box {
-  background: #f8f9fa; border-radius: 8px;
-  padding: 10px; text-align: center;
-  border: 1px solid #e9ecef;
-}
-.stok-number { font-size: 1.6rem; font-weight: 800; }
-.text-safe   { color: #198754; }
-.badge-custom { font-size: .75rem; padding: 5px 8px; border-radius: 6px; font-weight: 600; }
-.badge-loc {
-  font-size: .85rem; padding: 8px 12px; border-radius: 6px;
-  font-weight: 700; cursor: pointer; letter-spacing: .5px;
-  transition: .2s; display: inline-block; width: 100%;
-  text-align: center; border: 1px dashed #ccc;
-}
-.badge-loc:active { transform: scale(.95); }
-.badge-loc.filled { background: #212529; color: #fff; border-color: #212529; }
-.badge-loc.empty  { background: #fff; color: #999; }
-.blok-pill {
-  display: inline-flex; align-items: center;
-  font-size: .75rem; font-weight: 600;
-  padding: 4px 10px; border-radius: 6px;
-  background: #E6F1FB; color: #0C447C;
-  border: 1px solid #B5D4F4;
-}
-.blok-pill-empty {
-  display: inline-flex; align-items: center;
-  font-size: .75rem; font-weight: 600;
-  padding: 4px 10px; border-radius: 6px;
-  background: #f8f9fa; color: #6c757d;
-  border: 1px dashed #dee2e6;
-}
-</style>
+const namaBlok = computed(() => {
+  if (!props.item?.lokasi) return ''
+  if (!masterBlok.value?.length) return ''
+  const blok = masterBlok.value.find(b =>
+    b.nama === (props.item.lokasi || '').toUpperCase()
+  )
+  return blok ? blok.nama : ''
+})
+</script>
