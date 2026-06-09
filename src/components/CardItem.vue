@@ -67,6 +67,17 @@
 
 <script setup>
 import { computed } from 'vue'
+import { masterBlok } from '../composables/useBlok'
+
+const namaBlok = computed(() => {
+  if (!props.item?.lokasi) return ''
+  if (!masterBlok.value?.length) return ''
+  const blok = masterBlok.value.find(b =>
+    b.nama === (props.item.lokasi || '').toUpperCase()
+  )
+  return blok ? blok.nama : ''
+})
+import { computed } from 'vue'
 
 const props = defineProps({
   item: Object,
