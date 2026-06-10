@@ -61,6 +61,7 @@
         <div class="modal-body p-3" style="max-height:70vh;overflow-y:auto">
           <div class="row g-3">
 
+            <!-- PER BLOK -->
             <div v-for="blok in blokData" :key="blok.nama" class="col-12 col-md-6 col-lg-4">
               <div class="blok-card shadow-sm" :class="activeBlok === blok.nama ? 'blok-active' : ''"
                    @click="toggleBlok(blok.nama)">
@@ -92,7 +93,17 @@
                              style="font-size:.9rem">
                           {{ fmt(item.stok) }} Kg
                         </div>
-                        <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end">
+                        <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end flex-wrap">
+                          <select class="form-select form-select-sm"
+                                  style="max-width:110px;font-size:.72rem"
+                                  :value="item.lokasi"
+                                  @change="assignBlok(item, $event.target.value)"
+                                  @click.stop>
+                            <option value="">Pindah Blok...</option>
+                            <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
+                              {{ b.nama }}
+                            </option>
+                          </select>
                           <button class="btn btn-xs btn-outline-success"
                                   @click.stop="quickTrans('MASUK', item)">
                             <i class="fas fa-arrow-down" style="font-size:.65rem"></i>
@@ -147,7 +158,17 @@
                              style="font-size:.9rem">
                           {{ fmt(item.stok) }} Kg
                         </div>
-                        <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end">
+                        <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end flex-wrap">
+                          <select class="form-select form-select-sm"
+                                  style="max-width:110px;font-size:.72rem"
+                                  value=""
+                                  @change="assignBlok(item, $event.target.value)"
+                                  @click.stop>
+                            <option value="">Set Blok...</option>
+                            <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
+                              {{ b.nama }}
+                            </option>
+                          </select>
                           <button class="btn btn-xs btn-outline-success"
                                   @click.stop="quickTrans('MASUK', item)">
                             <i class="fas fa-arrow-down" style="font-size:.65rem"></i>
@@ -190,7 +211,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { ref as dbRef, get, set, remove } from 'firebase/database'
+import { ref as dbRef, set, remove, update } from 'firebase/database'
 import { db } from '../../firebase'
 import { dbStok } from '../../composables/useStok'
 import { currentRole } from '../../composables/useAuth'
@@ -234,6 +255,23 @@ const hapusBlok = async (id) => {
   })
   if (!result.isConfirmed) return
   await remove(dbRef(db, `master_blok/${id}`))
+}
+
+const assignBlok = async (item, namaBlok) => {
+  if (!namaBlok) return
+  try {
+    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
+      lokasi: namaBlok.toUpperCase()
+    })
+    window.Swal.fire({
+      icon: 'success',
+      title: `Dipindah ke Blok ${namaBlok}`,
+      timer: 1000,
+      showConfirmButton: false
+    })
+  } catch(e) {
+    window.Swal.fire('Error', e.message, 'error')
+  }
 }
 
 const blokData = computed(() => {
