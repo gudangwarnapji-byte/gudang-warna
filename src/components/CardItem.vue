@@ -14,29 +14,29 @@
         </div>
       </div>
 
-<!-- INFO -->
-<div class="mb-3">
-  <small class="text-muted d-block mb-2">
-    {{ item.warna }} | <b>{{ item.kodeErp }}</b>
-  </small>
-  <div class="d-flex gap-2 mt-1">
-    <div v-if="namaBlok" class="blok-pill">
-      <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
-      Blok {{ namaBlok }}
-    </div>
-    <div v-else class="blok-pill-empty">
-      <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
-      Belum ada blok
-    </div>
-  </div>
-</div>
-
-<!-- STOK -->
-      <div class="stok-box mb-3 shadow-sm">
-        <div class="small text-muted fw-bold" style="font-size:.65rem">STOK SAAT INI</div>
-        <div :class="['stok-number', isCritical ? 'text-danger' : 'text-safe']">
-          {{ fmt(item.stok) }} <span style="font-size:.8rem">Kg</span>
+      <!-- INFO -->
+      <div class="mb-3">
+        <small class="text-muted d-block mb-2">
+          {{ item.warna }} | <b>{{ item.kodeErp }}</b>
+        </small>
+        <div class="d-flex gap-2 mt-1">
+          <div v-if="namaBlok" class="blok-pill">
+            <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
+            Blok {{ namaBlok }}
+          </div>
+          <div v-else class="blok-pill-empty">
+            <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
+            Belum ada blok
+          </div>
         </div>
+      </div>
+
+      <!-- STOK -->
+      <div class="stok-row mb-3" :class="isCritical ? 'stok-kritis' : ''">
+        <span class="stok-row-lbl">Stok saat ini</span>
+        <span class="stok-row-val" :class="isCritical ? 'text-danger' : 'text-safe'">
+          {{ fmt(item.stok) }} Kg
+        </span>
       </div>
 
       <!-- ACTIONS -->
@@ -45,10 +45,10 @@
                 @click="$emit('transaksi', 'MASUK', item)">Masuk</button>
         <button class="btn btn-outline-danger flex-grow-1 fw-bold"
                 @click="$emit('transaksi', 'KELUAR', item)">Keluar</button>
-<button class="btn btn-light border shadow-sm"
-        @click="$emit('riwayat', item.idUnik)">
-  <i class="fas fa-history"></i>
-</button>
+        <button class="btn btn-light border shadow-sm"
+                @click="$emit('riwayat', item.idUnik)">
+          <i class="fas fa-history"></i>
+        </button>
         <button class="btn btn-warning border text-dark shadow-sm"
                 @click="$emit('transaksi', 'OPNAME', item)">
           <i class="fas fa-check-double"></i>
@@ -112,3 +112,37 @@ const namaBlok = computed(() => {
   return blok ? blok.nama : ''
 })
 </script>
+
+<style scoped>
+.card-item {
+  border: none; border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,.05);
+  transition: transform .2s;
+}
+.card-item:active { transform: scale(.98); }
+.badge-custom { font-size: .75rem; padding: 5px 8px; border-radius: 6px; font-weight: 600; }
+.blok-pill {
+  display: inline-flex; align-items: center;
+  font-size: .75rem; font-weight: 600;
+  padding: 4px 10px; border-radius: 6px;
+  background: #E6F1FB; color: #0C447C;
+  border: 1px solid #B5D4F4;
+}
+.blok-pill-empty {
+  display: inline-flex; align-items: center;
+  font-size: .75rem; font-weight: 600;
+  padding: 4px 10px; border-radius: 6px;
+  background: #f8f9fa; color: #6c757d;
+  border: 1px dashed #dee2e6;
+}
+.stok-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa; border-radius: 8px;
+  padding: 8px 12px; border: 1px solid #e9ecef;
+}
+.stok-row.stok-kritis { background: #fff5f5; border-color: #f7c1c1; }
+.stok-row-lbl { font-size: .72rem; color: #6c757d; text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+.stok-row-val { font-size: 1rem; font-weight: 700; }
+.text-safe { color: #198754; }
+</style>
