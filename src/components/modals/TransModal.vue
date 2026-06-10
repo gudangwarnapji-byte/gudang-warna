@@ -7,6 +7,7 @@
           <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
         </div>
         <div class="modal-body">
+
           <!-- INFO BARANG -->
           <div class="alert alert-light border mb-3">
             <div class="d-flex justify-content-between mb-1">
@@ -43,14 +44,21 @@
             </span>
           </div>
 
-          <!-- LOKASI -->
-          <label class="fw-bold small mt-3">LOKASI SAAT INI</label>
-          <input
-            type="text"
-            class="form-control border-warning text-uppercase fw-bold"
-            v-model="lokasi"
-            placeholder="Contoh: A-01, B-05"
-          >
+          <!-- PILIH BLOK (OPSIONAL) -->
+          <label class="fw-bold small mt-3">
+            BLOK
+            <span class="text-muted fw-normal" style="font-size:.7rem"> — opsional</span>
+          </label>
+          <select class="form-select" v-model="blokPilih">
+            <option value="">-- Tidak mengubah blok --</option>
+            <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
+              {{ b.nama }}
+            </option>
+          </select>
+          <div v-if="activeItem?.lokasi" class="small text-muted mt-1">
+            <i class="fas fa-warehouse me-1"></i>
+            Blok saat ini: <b>{{ activeItem.lokasi }}</b>
+          </div>
 
           <!-- KETERANGAN -->
           <input
@@ -72,6 +80,7 @@
               {{ submitting ? 'Menyimpan...' : 'SIMPAN DATA' }}
             </button>
           </div>
+
         </div>
       </div>
     </div>
@@ -82,17 +91,18 @@
 import { ref, computed, nextTick, watch } from 'vue'
 import { useStok } from '../../composables/useStok'
 import { activeTrans } from '../../composables/useTrans'
+import { masterBlok } from '../../composables/useBlok'
 
 const emit = defineEmits(['close'])
 const { kirimTransaksi } = useStok()
 
-const qty = ref('')
-const lokasi = ref('')
+const qty        = ref('')
 const keterangan = ref('')
+const blokPilih  = ref('')
 const submitting = ref(false)
-const qtyInput = ref(null)
+const qtyInput   = ref(null)
 
-const tipe = computed(() => activeTrans.value?.tipe || '')
+const tipe       = computed(() => activeTrans.value?.tipe || '')
 const activeItem = computed(() => activeTrans.value?.item || null)
 
 const selisih = computed(() => {
@@ -113,7 +123,7 @@ const btnClass = computed(() => ({
 }))
 
 const modalTitle = computed(() => ({
-  MASUK: 'Transaksi Masuk',
+  MASUK:  'Transaksi Masuk',
   KELUAR: 'Transaksi Keluar',
   OPNAME: 'Opname Stok'
 }[tipe.value] || 'Transaksi'))
@@ -124,9 +134,9 @@ const fmt = n => Number(n || 0).toLocaleString('id-ID', {
 
 watch(() => activeTrans.value, val => {
   if (val) {
-    qty.value = ''
-    lokasi.value = val.item?.lokasi || ''
+    qty.value        = ''
     keterangan.value = ''
+    blokPilih.value  = val.item?.lokasi || ''
     nextTick(() => qtyInput.value?.focus())
   }
 })
@@ -140,7 +150,7 @@ const submit = async () => {
       activeItem.value.idUnik,
       tipe.value, q,
       (keterangan.value || '-').toUpperCase(),
-      lokasi.value
+      blokPilih.value || activeItem.value.lokasi || ''
     )
     emit('close')
   } finally {
