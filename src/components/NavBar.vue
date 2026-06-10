@@ -20,37 +20,32 @@
       <div class="d-flex align-items-center gap-2">
 
         <!-- ADMIN ONLY -->
-<template v-if="isAdmin">
-  <button class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm"
-          @click="bukaAddModal">
-    <i class="fas fa-plus-circle me-1"></i> Barang
-  </button>
-  <button class="btn btn-sm btn-primary fw-bold shadow-sm"
-          style="border-radius:8px"
-          @click="bukaBatch">
-    <i class="fas fa-paste"></i>
-  </button>
-  <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm"
-          style="border-radius:8px"
-          @click="konfirmasiAudit">
-    <i class="fas fa-wrench"></i>
-  </button>
+        <template v-if="isAdmin">
+          <button class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm"
+                  @click="bukaAddModal">
+            <i class="fas fa-plus-circle me-1"></i> Barang
+          </button>
+          <button class="btn btn-sm btn-primary fw-bold shadow-sm"
+                  style="border-radius:8px" @click="bukaBatch">
+            <i class="fas fa-paste"></i>
+          </button>
+          <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm"
+                  style="border-radius:8px" @click="konfirmasiAudit">
+            <i class="fas fa-wrench"></i>
+          </button>
           <button class="btn btn-sm btn-light text-primary fw-bold shadow-sm"
-                  style="border-radius:8px"
-                  @click="konfirmasiAutoFix">
+                  style="border-radius:8px" @click="konfirmasiAutoFix">
             <i class="fas fa-magic"></i>
           </button>
           <button class="btn btn-sm btn-success shadow-sm"
-                  style="border-radius:8px"
-                  @click="exportStok">
+                  style="border-radius:8px" @click="exportStok">
             <i class="fas fa-file-excel"></i>
           </button>
-  <button class="btn btn-sm btn-dark fw-bold shadow-sm"
-        style="border-radius:8px"
-        @click="bukaSelisih"
-        title="Cek Selisih vs ERP">
-  <i class="fas fa-balance-scale"></i>
-</button>
+          <button class="btn btn-sm btn-dark fw-bold shadow-sm"
+                  style="border-radius:8px" @click="bukaSelisih"
+                  title="Cek Selisih vs ERP">
+            <i class="fas fa-balance-scale"></i>
+          </button>
         </template>
 
         <!-- LAPORAN -->
@@ -71,12 +66,12 @@
               <i class="fas fa-calendar-alt" style="color:#6f42c1;width:24px;text-align:center"></i> Arus Bulanan
             </a></li>
             <li><hr class="dropdown-divider"></li>
-<li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaSuratJalan">
-  <i class="fas fa-file-pdf text-danger" style="width:24px;text-align:center"></i> Surat Jalan PDF
-</a></li>
+            <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaSuratJalan">
+              <i class="fas fa-file-pdf text-danger" style="width:24px;text-align:center"></i> Surat Jalan PDF
+            </a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaRekapJenis">
-              <i class="fas fa-layer-group text-warning" style="width:24px;text-align:center"></i> Total Per Jenis
+            <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaBlok">
+              <i class="fas fa-th-large text-primary" style="width:24px;text-align:center"></i> Peta Blok
             </a></li>
           </ul>
         </div>
@@ -99,31 +94,31 @@ import { db } from '../firebase'
 import { useAuth, user, currentRole } from '../composables/useAuth'
 import { useStok, dbStok } from '../composables/useStok'
 import { useDaily } from '../composables/useDaily'
-import { useMutasi, showMutasiModal } from '../composables/useMutasi'
+import { useMutasi } from '../composables/useMutasi'
 import { useBulanan } from '../composables/useBulanan'
-import { useAdd, showAddModal } from '../composables/useAdd'
-import { useBatch, showBatchModal } from '../composables/useBatch'
+import { useAdd } from '../composables/useAdd'
+import { useBatch } from '../composables/useBatch'
 import { useSelisih } from '../composables/useSelisih'
 import { useSuratJalan } from '../composables/useSuratJalan'
-const { bukaSuratJalan } = useSuratJalan()
-const { bukaSelisih } = useSelisih()
-const { bukaBatch } = useBatch()
+import { useBlok } from '../composables/useBlok'
+
+const { doLogout }     = useAuth()
+const { refreshData }  = useStok()
+const { bukaDaily }    = useDaily()
+const { bukaMutasi }   = useMutasi()
+const { bukaBulanan }  = useBulanan()
 const { bukaAddModal } = useAdd()
-const { doLogout } = useAuth()
-const { refreshData } = useStok()
-const { bukaDaily } = useDaily()
-const { bukaMutasi } = useMutasi()
-const { bukaBulanan } = useBulanan()
+const { bukaBatch }    = useBatch()
+const { bukaSelisih }  = useSelisih()
+const { bukaSuratJalan } = useSuratJalan()
+const { bukaBlok }     = useBlok()
 
 const isAdmin = computed(() => currentRole.value === 'admin')
 
-const bukaRekapJenis = () => window.Swal.fire('Info', 'Segera hadir!', 'info')
-
-
 const getTipeGrade = kode => {
-  const k = (kode || '').toUpperCase()
-  const tipe  = k.includes('BBO') ? 'OVERAN' : k.includes('BBG') ? 'DESTEX' : 'PAJITEX'
-  const last  = k.slice(-1)
+  const k    = (kode || '').toUpperCase()
+  const tipe = k.includes('BBO') ? 'OVERAN' : k.includes('BBG') ? 'DESTEX' : 'PAJITEX'
+  const last = k.slice(-1)
   const grade = last === 'B' ? 'B' : last === 'L' ? 'L' : 'A'
   return { tipe, grade }
 }
@@ -132,9 +127,7 @@ const konfirmasiAudit = () => {
   window.Swal.fire({
     title: 'Audit Global?',
     html: 'Sistem akan menghitung ulang stok <b>SEMUA BARANG</b>.',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#1e3c72'
+    icon: 'warning', showCancelButton: true, confirmButtonColor: '#1e3c72'
   }).then(r => { if (r.isConfirmed) jalankanAudit() })
 }
 
@@ -145,18 +138,18 @@ const jalankanAudit = async () => {
       get(dbRef(db, 'stok_benang')),
       get(dbRef(db, 'riwayat_transaksi'))
     ])
-    const masters = snapM.val() || {}
+    const masters   = snapM.val() || {}
     const histories = snapH.val() || {}
-    const updates = {}
+    const updates   = {}
     Object.keys(masters).forEach(id => {
       let run = Number(masters[id].stokAwal) || 0
       Object.values(histories[id] || {})
         .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
         .forEach(log => {
           const q = Number(log.qty)
-          if (log.tipe === 'MASUK') run += q
+          if (log.tipe === 'MASUK')       run += q
           else if (log.tipe === 'KELUAR') run -= q
-          else if (log.tipe === 'OPNAME') run = q
+          else if (log.tipe === 'OPNAME') run  = q
           run = parseFloat(run.toFixed(2))
           updates[`riwayat_transaksi/${id}/${log.trxId}/stokAkhir`] = run
         })
@@ -174,9 +167,7 @@ const konfirmasiAutoFix = () => {
   window.Swal.fire({
     title: 'Auto-Fix Data?',
     html: 'Update <b>TIPE</b> dan <b>GRADE</b> berdasarkan Kode ERP.',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#1e3c72'
+    icon: 'warning', showCancelButton: true, confirmButtonColor: '#1e3c72'
   }).then(r => { if (r.isConfirmed) jalankanAutoFix() })
 }
 
@@ -189,7 +180,7 @@ const jalankanAutoFix = async () => {
     const updates = {}
     Object.keys(data).forEach(key => {
       const { tipe, grade } = getTipeGrade(data[key].kodeErp)
-      updates[`stok_benang/${key}/tipe`] = tipe
+      updates[`stok_benang/${key}/tipe`]  = tipe
       updates[`stok_benang/${key}/grade`] = grade
     })
     await update(dbRef(db), updates)
