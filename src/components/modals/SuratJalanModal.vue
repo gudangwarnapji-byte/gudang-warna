@@ -10,14 +10,12 @@
         </div>
         <div class="modal-body">
 
-          <!-- STEP 1: Pilih Tanggal -->
           <div class="mb-3">
             <label class="small fw-bold">TANGGAL</label>
             <input type="date" class="form-control fw-bold"
                    v-model="tglPilih" @change="loadKeterangan">
           </div>
 
-          <!-- STEP 2: Pilih Keterangan -->
           <div class="mb-3">
             <label class="small fw-bold">KETERANGAN TRANSAKSI</label>
             <select class="form-select fw-bold" v-model="ketPilih"
@@ -33,7 +31,6 @@
             </div>
           </div>
 
-          <!-- STEP 3: Tujuan -->
           <div class="mb-3">
             <label class="small fw-bold">TUJUAN PENGIRIMAN</label>
             <input type="text" class="form-control text-uppercase fw-bold"
@@ -112,6 +109,7 @@ const generatePDF = async () => {
             kode: m?.kodeErp || trx.kodeErp || '-',
             nama: m?.nama || '-',
             warna: m?.warna || '-',
+            blok: trx.blok || '-', // Nambahin info blok dari riwayat
             qty: parseFloat(trx.qty) || 0
           })
         }
@@ -160,9 +158,16 @@ const generatePDF = async () => {
     let totalQty = 0
     const body = raw.map((item, idx) => {
       totalQty += item.qty
-      return [idx + 1, item.kode, item.nama, item.warna, Number(item.qty).toLocaleString('id-ID', { minimumFractionDigits: 2 })]
+      return [
+        idx + 1, 
+        item.kode, 
+        item.nama, 
+        item.warna, 
+        item.blok.toUpperCase(), // Munculin blok di tabel
+        Number(item.qty).toLocaleString('id-ID', { minimumFractionDigits: 2 })
+      ]
     })
-    body.push(['', '', '', 'TOTAL BERAT', Number(totalQty).toLocaleString('id-ID', { minimumFractionDigits: 2 })])
+    body.push(['', '', '', '', 'TOTAL BERAT', Number(totalQty).toLocaleString('id-ID', { minimumFractionDigits: 2 })])
 
     const n = body.length
     const fontSize = n > 50 ? 6 : n > 40 ? 7 : n > 30 ? 8 : 9
@@ -170,7 +175,7 @@ const generatePDF = async () => {
 
     doc.autoTable({
       startY: 48,
-      head: [['No', 'Kode ERP', 'Nama Barang / Lot', 'Warna', 'Qty (Kg)']],
+      head: [['No', 'Kode ERP', 'Nama Barang / Lot', 'Warna', 'Blok Asal', 'Qty (Kg)']], // Header tabel baru
       body,
       theme: 'grid',
       headStyles: { fillColor: [255,255,255], textColor: [0,0,0], lineColor: [0,0,0], lineWidth: 0.1, halign: 'center', cellPadding: padding + 0.5 },
@@ -180,14 +185,16 @@ const generatePDF = async () => {
         1: { halign: 'center' },
         2: { halign: 'center' },
         3: { halign: 'center' },
-        4: { halign: 'center', fontStyle: 'bold' }
+        4: { halign: 'center' }, // Style untuk kolom Blok
+        5: { halign: 'center', fontStyle: 'bold' }
       },
       margin: { bottom: 50 }
     })
 
     doc.save(`${noSurat}_${ketPilih.value}.pdf`)
     window.Swal.fire({ icon: 'success', title: 'PDF Diunduh!', timer: 1500, showConfirmButton: false })
-    emit('close')
+    
+    // emit('close') // DIHAPUS BIAR GA AUTO CLOSE
 
   } catch(e) {
     window.Swal.fire('Error', e.message, 'error')
