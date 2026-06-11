@@ -1,9 +1,8 @@
 <template>
   <nav class="navbar navbar-dark mb-2">
-    <div class="container d-flex justify-content-between align-items-center">
+    <div class="container d-flex flex-nowrap align-items-center" style="gap: 15px;">
 
-      <!-- LOGO -->
-      <a class="navbar-brand d-flex align-items-center gap-2" href="#" style="padding:0">
+      <a class="navbar-brand d-flex align-items-center gap-2 m-0 flex-shrink-0" href="#" style="padding:0;">
         <img src="https://cdn-icons-png.flaticon.com/512/17167/17167932.png"
              alt="Logo" style="height:38px">
         <div class="d-flex flex-column justify-content-center">
@@ -16,40 +15,37 @@
         </div>
       </a>
 
-      <!-- BUTTONS -->
-      <div class="d-flex align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2 overflow-x-auto flex-nowrap py-1 swipe-menu w-100 justify-content-md-end">
 
-        <!-- ADMIN ONLY -->
         <template v-if="isAdmin">
-          <button class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm"
+          <button class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm flex-shrink-0"
                   @click="bukaAddModal">
             <i class="fas fa-plus-circle me-1"></i> Barang
           </button>
-          <button class="btn btn-sm btn-primary fw-bold shadow-sm"
-                  style="border-radius:8px" @click="bukaBatch">
+          <button class="btn btn-sm btn-primary fw-bold shadow-sm flex-shrink-0"
+                  style="border-radius:8px" @click="bukaBatch" title="Input Massal Excel">
             <i class="fas fa-paste"></i>
           </button>
-          <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm"
-                  style="border-radius:8px" @click="konfirmasiAudit">
+          <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm flex-shrink-0"
+                  style="border-radius:8px" @click="konfirmasiAudit" title="Audit Ulang Total Stok">
             <i class="fas fa-wrench"></i>
           </button>
-          <button class="btn btn-sm btn-light text-primary fw-bold shadow-sm"
-                  style="border-radius:8px" @click="konfirmasiAutoFix">
+          <button class="btn btn-sm btn-light text-primary fw-bold shadow-sm flex-shrink-0"
+                  style="border-radius:8px" @click="konfirmasiAutoFix" title="Auto-Fix Kategori">
             <i class="fas fa-magic"></i>
           </button>
-          <button class="btn btn-sm btn-success shadow-sm"
-                  style="border-radius:8px" @click="exportStok">
+          <button class="btn btn-sm btn-success shadow-sm flex-shrink-0"
+                  style="border-radius:8px" @click="exportStok" title="Export Master Stok">
             <i class="fas fa-file-excel"></i>
           </button>
-          <button class="btn btn-sm btn-dark fw-bold shadow-sm"
+          <button class="btn btn-sm btn-dark fw-bold shadow-sm flex-shrink-0"
                   style="border-radius:8px" @click="bukaSelisih"
                   title="Cek Selisih vs ERP">
             <i class="fas fa-balance-scale"></i>
           </button>
         </template>
 
-        <!-- LAPORAN -->
-        <div class="dropdown">
+        <div class="dropdown flex-shrink-0">
           <button class="btn btn-sm btn-info text-white fw-bold rounded-pill px-3 shadow-sm dropdown-toggle"
                   type="button" data-bs-toggle="dropdown">
             <i class="fas fa-folder-open me-1"></i> Laporan
@@ -76,13 +72,14 @@
           </ul>
         </div>
 
-        <img v-if="user?.photoURL" :src="user.photoURL" class="user-avatar">
-        <button class="btn btn-sm btn-danger rounded-circle"
+        <img v-if="user?.photoURL" :src="user.photoURL" class="user-avatar flex-shrink-0 ms-1">
+        <button class="btn btn-sm btn-danger rounded-circle flex-shrink-0"
                 style="width:32px;height:32px;padding:0"
                 @click="doLogout">
           <i class="fas fa-power-off"></i>
         </button>
       </div>
+
     </div>
   </nav>
 </template>
@@ -239,5 +236,14 @@ const exportStok = () => {
 .user-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   border: 2px solid #fff;
+}
+
+/* CSS Khusus Swipeable Menu HP */
+.swipe-menu {
+  -webkit-overflow-scrolling: touch; /* Biar scroll smooth di iPhone */
+  scrollbar-width: none; /* Sembunyikan scrollbar di Firefox */
+}
+.swipe-menu::-webkit-scrollbar {
+  display: none; /* Sembunyikan scrollbar di Chrome/Safari */
 }
 </style>
