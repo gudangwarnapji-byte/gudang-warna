@@ -37,7 +37,7 @@
                            @change="toggleAll">
                   </th>
                   <th>Kode &amp; Nama Barang</th>
-                  <th>Tipe</th>
+                  <th>Tipe Transaksi</th>
                   <th class="text-end">Qty (Kg)</th>
                   <th>Keterangan</th>
                   <th v-if="currentRole === 'admin'" class="text-center">Aksi</th>
@@ -45,20 +45,20 @@
               </thead>
               <tbody>
                 <template v-if="loading">
-                  <tr><td :colspan="currentRole === 'admin' ? 6 : 4" class="text-center py-4">
+                  <tr><td :colspan="currentRole === 'admin' ? 6 : 5" class="text-center py-4">
                     <div class="spinner-border text-info"></div>
                   </td></tr>
                 </template>
                 <template v-else-if="groupedLogs.length">
                   <template v-for="group in groupedLogs" :key="group.tipe + group.ket">
                     <tr :class="tipeRowClass(group.tipe)">
-                      <td :colspan="currentRole === 'admin' ? 6 : 4" class="fw-bold py-2">
+                      <td :colspan="currentRole === 'admin' ? 6 : 5" class="fw-bold py-2">
                         <i :class="tipeIcon(group.tipe)" class="me-2"></i>
                         TRANSAKSI: {{ group.tipe }}
                       </td>
                     </tr>
                     <tr class="bg-light">
-                      <td :colspan="currentRole === 'admin' ? 6 : 4" class="fw-bold text-secondary py-2 ps-3" style="font-size:.85rem">
+                      <td :colspan="currentRole === 'admin' ? 6 : 5" class="fw-bold text-secondary py-2 ps-3" style="font-size:.85rem">
                         <i class="fas fa-tag me-1 text-muted"></i> KETERANGAN: {{ group.ket }}
                       </td>
                     </tr>
@@ -72,7 +72,12 @@
                         <div class="fw-bold text-dark" style="line-height:1.1">{{ r.namaBarang }}</div>
                         <div style="font-size:.7rem" class="text-muted font-monospace">{{ r.kodeErpRef }}</div>
                       </td>
-                      <td><span class="badge" :class="tipeBadgeClass(r.tipe)">{{ r.tipe }}</span></td>
+                      <td>
+                        <div><span class="badge mb-1" :class="tipeBadgeClass(r.tipe)">{{ r.tipe }}</span></div>
+                        <span v-if="r.blok" class="badge bg-secondary text-white" style="font-size:.65rem">
+                          <i class="fas fa-warehouse me-1"></i> {{ r.blok }}
+                        </span>
+                      </td>
                       <td class="text-end fw-bold">{{ fmt(r.qty) }}</td>
                       <td>
                         <span class="badge badge-ket text-uppercase shadow-sm" :class="ketBadgeClass(r.keterangan)">
@@ -89,7 +94,7 @@
                   </template>
                 </template>
                 <template v-else>
-                  <tr><td :colspan="currentRole === 'admin' ? 6 : 4" class="text-center py-5 text-muted">
+                  <tr><td :colspan="currentRole === 'admin' ? 6 : 5" class="text-center py-5 text-muted">
                     Tidak ada aktivitas pada tanggal ini
                   </td></tr>
                 </template>
@@ -140,7 +145,7 @@ const { bukaEdit } = useEditTrans()
 const tglPicker = ref(new Date().toISOString().slice(0, 10))
 const loading = ref(false)
 const logs = ref([])
-const checkedIds = ref([]) // State untuk nyimpen checkbox
+const checkedIds = ref([]) 
 
 const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
@@ -151,7 +156,6 @@ const editDariHarian = (r) => {
   emit('close')
 }
 
-// Computed & Method untuk Checkbox "Pilih Semua"
 const allChecked = computed(() => {
   const allIds = logs.value.map(r => r.parentId + '|' + r.trxId)
   return allIds.length > 0 && allIds.every(id => checkedIds.value.includes(id))
@@ -165,11 +169,10 @@ const toggleAll = (e) => {
   }
 }
 
-// Load Data
 const loadData = async () => {
   loading.value = true
   logs.value = []
-  checkedIds.value = [] // Kosongin centangan kalau ganti tanggal
+  checkedIds.value = [] 
   try {
     const snap = await get(dbRef(db, 'riwayat_transaksi'))
     const all = snap.val() || {}
@@ -193,7 +196,7 @@ const loadData = async () => {
   }
 }
 
-// Fungsi Delete Bulk & Audit Stok
+// FUNGSI HAPUS BULK & RE-AUDIT MULTI-BLOK
 const hapusTerpilih = async () => {
   if (!checkedIds.value.length) return
   const result = await window.Swal.fire({
@@ -217,21 +220,19 @@ const hapusTerpilih = async () => {
     const parentIds = new Set()
     const delUpdates = {}
 
-    // Tandai data yang mau di null-kan (hapus)
     checkedIds.value.forEach(val => {
       const [pId, tId] = val.split('|')
       delUpdates[`riwayat_transaksi/${pId}/${tId}`] = null
       parentIds.add(pId)
     })
 
-    // Eksekusi hapus di Firebase
     await update(dbRef(db), delUpdates)
 
-    // Tarik ulang data untuk Re-Audit Stok
     const [snapM, snapH] = await Promise.all([
       get(dbRef(db, 'stok_benang')),
       get(dbRef(db, 'riwayat_transaksi'))
     ])
+    
     const masters = snapM.val() || {}
     const histories = snapH.val() || {}
     const auditUp = {}
@@ -240,31 +241,42 @@ const hapusTerpilih = async () => {
       const item = masters[id]
       if (!item) return
       let run = Number(item.stokAwal) || 0
-      const bloks = {}
+      const bloksAudit = {}
 
       Object.values(histories[id] || {})
         .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
         .forEach(l => {
           const q = Number(l.qty)
-          const blok = l.blok || ''
+          const blokNama = l.blok || ''
+          
           if (l.tipe === 'MASUK') {
             run += q
-            if (blok) bloks[blok] = parseFloat(((bloks[blok] || 0) + q).toFixed(2))
+            if (blokNama) bloksAudit[blokNama] = (parseFloat(bloksAudit[blokNama]) || 0) + q
           } else if (l.tipe === 'KELUAR') {
             run -= q
-            if (blok) bloks[blok] = parseFloat(((bloks[blok] || 0) - q).toFixed(2))
+            if (blokNama) bloksAudit[blokNama] = (parseFloat(bloksAudit[blokNama]) || 0) - q
           } else if (l.tipe === 'OPNAME') {
-            run = q
-            if (blok) bloks[blok] = q
+            if (blokNama) {
+              const stokBlokLama = parseFloat(bloksAudit[blokNama]) || 0
+              const selisih = q - stokBlokLama
+              run += selisih
+              bloksAudit[blokNama] = q
+            } else {
+              run = q
+            }
           }
+          
           run = parseFloat(run.toFixed(2))
           auditUp[`riwayat_transaksi/${id}/${l.trxId}/stokAkhir`] = run
         })
 
-      Object.keys(bloks).forEach(b => { if (bloks[b] <= 0) delete bloks[b] })
+      Object.keys(bloksAudit).forEach(b => { 
+        bloksAudit[b] = parseFloat(bloksAudit[b].toFixed(2))
+        if (bloksAudit[b] <= 0) delete bloksAudit[b] 
+      })
 
       auditUp[`stok_benang/${id}/stok`] = run
-      auditUp[`stok_benang/${id}/bloks`] = bloks
+      auditUp[`stok_benang/${id}/bloks`] = Object.keys(bloksAudit).length ? bloksAudit : null
     })
 
     if (Object.keys(auditUp).length) await update(dbRef(db), auditUp)
@@ -334,19 +346,23 @@ const ketBadgeClass = ket => {
   return 'bg-secondary'
 }
 
+// EXPORT EXCEL (Sudah ada BLOK LOKASI)
 const exportExcel = () => {
   if (!logs.value.length) return
   const rows = [
-    ['TANGGAL', 'JAM', 'KODE ERP', 'NAMA BARANG', 'TIPE', 'QTY (KG)', 'KETERANGAN'],
+    ['REKAPITULASI TRANSAKSI HARIAN', `Tanggal: ${tglPicker.value}`],
+    [],
+    ['TANGGAL', 'JAM', 'KODE ERP', 'NAMA BARANG', 'TIPE', 'BLOK LOKASI', 'QTY (KG)', 'KETERANGAN'],
     ...logs.value.map(l => [
       new Date(l.tanggal).toLocaleDateString('id-ID'),
       new Date(l.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-      l.kodeErpRef, l.namaBarang, l.tipe, l.qty, l.keterangan
+      l.kodeErpRef, l.namaBarang, l.tipe, (l.blok || '-').toUpperCase(), l.qty, l.keterangan
     ])
   ]
   const ws = window.XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 30 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 25 }]
   const wb = window.XLSX.utils.book_new()
-  window.XLSX.utils.book_append_sheet(wb, ws, 'Rekap')
+  window.XLSX.utils.book_append_sheet(wb, ws, 'Rekap_Harian')
   window.XLSX.writeFile(wb, `Rekap_Gudang_${tglPicker.value}.xlsx`)
 }
 
