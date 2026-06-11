@@ -51,7 +51,7 @@
                 
                 <div class="col-md-3 col-12">
                   <select class="form-select form-select-sm fw-bold border-success" v-model="globalBlok">
-                    <option value="">-- Blok (Semua) --</option>
+                    <option value="">-- Bebas / Tanpa Lokasi --</option>
                     <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
                       {{ b.nama }}
                     </option>
@@ -68,7 +68,7 @@
                       <th style="width:4%">#</th>
                       <th style="width:36%">KODE / NAMA</th>
                       <th style="width:12%">WARNA</th>
-                      <th style="width:15%">BLOK</th>
+                      <th style="width:15%">BLOK (OPSIONAL)</th>
                       <th style="width:13%">QTY (KG)</th>
                       <th style="width:15%">PREVIEW SALDO</th>
                       <th style="width:5%">X</th>
@@ -121,18 +121,19 @@
                       <td>
                         <select class="form-select form-select-sm fw-bold"
                                 v-model="row.blok">
-                          <option value="">-</option>
-                          <template v-if="globalTipe === 'KELUAR' && row.itemId">
-                            <option v-for="(stokBlok, blokNama) in (getItemBloks(row.itemId))"
-                                    :key="blokNama" :value="blokNama">
+                          <option value="">- Tanpa Lokasi -</option>
+                          
+                          <template v-if="(globalTipe === 'KELUAR' || globalTipe === 'OPNAME') && row.itemId">
+                            <option v-for="(stokBlok, blokNama) in getItemBloks(row.itemId)"
+                                    :key="'saran-'+blokNama" :value="blokNama">
                               {{ blokNama }} ({{ fmt(stokBlok) }})
                             </option>
+                            <option disabled>────────────────</option>
                           </template>
-                          <template v-else>
-                            <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
-                              {{ b.nama }}
-                            </option>
-                          </template>
+                          
+                          <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
+                            {{ b.nama }}
+                          </option>
                         </select>
                       </td>
 
@@ -143,10 +144,15 @@
                       </td>
 
                       <td class="text-center small">
-                        <span v-if="row.itemId && row.qty && row.blok">
-                          <span class="text-muted">{{ fmt(getStokBlok(row.itemId, row.blok)) }}</span>
-                          <i class="fas fa-arrow-right text-muted mx-1" style="font-size:.7rem"></i>
-                          <span :class="previewColor">{{ fmt(previewSaldo(row)) }}</span>
+                        <span v-if="row.itemId && row.qty">
+                          <span class="text-muted" style="font-size: 0.7rem;">
+                            {{ row.blok ? 'Blok: ' : 'Ttl: ' }}{{ fmt(getSaldoAwal(row)) }}
+                          </span>
+                          <i class="fas fa-arrow-right text-muted mx-1" style="font-size:.65rem"></i>
+                          
+                          <span :class="previewSaldo(row) < 0 ? 'text-danger fw-bold' : previewColor" class="fw-bold fs-6">
+                            {{ fmt(previewSaldo(row)) }}
+                          </span>
                         </span>
                         <span v-else class="text-muted">-</span>
                       </td>
@@ -206,7 +212,7 @@ const submitting     = ref(false)
 const rows           = ref([])
 
 watch(globalBlok, val => {
-  if (val) rows.value.forEach(r => { r.blok = val })
+  rows.value.forEach(r => { r.blok = val })
 })
 
 const activeDrop   = ref(-1)
@@ -217,14 +223,28 @@ const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
 })
 
+// === PERBAIKAN LOGIKA MULTI-BLOK & TANPA LOKASI ===
 const getItemBloks = (itemId) => {
   const item = dbStok.value.find(x => x.idUnik === itemId)
-  return item?.bloks || {}
+  if (!item?.bloks) return {}
+  // Filter blok yang saldonya > 0
+  const activeBloks = {}
+  Object.entries(item.bloks).forEach(([k, v]) => {
+    if (parseFloat(v) > 0) activeBloks[k] = parseFloat(v)
+  })
+  return activeBloks
 }
 
-const getStokBlok = (itemId, blokNama) => {
-  const item = dbStok.value.find(x => x.idUnik === itemId)
-  return parseFloat(item?.bloks?.[blokNama] || 0)
+const getSaldoAwal = (row) => {
+  const item = dbStok.value.find(x => x.idUnik === row.itemId)
+  if (!item) return 0
+  
+  // Jika milih Blok, kasih tau saldo di Blok tersebut
+  if (row.blok) {
+    return parseFloat(item.bloks?.[row.blok] || 0)
+  }
+  // Jika Tanpa Lokasi, kasih tau saldo Total Keseluruhan
+  return parseFloat(item.stok || 0)
 }
 
 const previewColor = computed(() => ({
@@ -233,13 +253,15 @@ const previewColor = computed(() => ({
   'text-warning': globalTipe.value === 'OPNAME'
 }))
 
-const previewSaldo = row => {
+const previewSaldo = (row) => {
   const q = parseFloat(row.qty) || 0
-  const s = getStokBlok(row.itemId, row.blok)
+  const s = getSaldoAwal(row)
   if (globalTipe.value === 'MASUK')  return s + q
   if (globalTipe.value === 'KELUAR') return s - q
-  return q
+  if (globalTipe.value === 'OPNAME') return q
+  return s
 }
+// ==================================================
 
 const validCount = computed(() =>
   rows.value.filter(r => r.itemId && parseFloat(r.qty) > 0).length
@@ -299,8 +321,7 @@ const pilihItem = (row, idx, item) => {
   row.kodeErp     = item.kodeErp
   row.warna       = item.warna || ''
   row.currentStok = parseFloat(item.stok) || 0
-  // PERBAIKAN BUG 1: Pertahankan pilihan blok baris jika globalBlok kosong
-  row.blok        = globalBlok.value || row.blok || '' 
+  row.blok        = globalBlok.value || '' 
   activeDrop.value  = -1
   suggestions[idx]  = []
   highlightIdx[idx] = -1
@@ -388,7 +409,6 @@ const submit = async () => {
       const bloks = pendingBloks[row.itemId]
       let currentStok = pendingStok[row.itemId]
 
-      // PERBAIKAN BUG 2: Selaraskan mutasi logika dengan DailyModal re-audit
       if (globalTipe.value === 'MASUK') {
         currentStok += qty
         if (blokNama) {
@@ -400,9 +420,13 @@ const submit = async () => {
           bloks[blokNama] = parseFloat(((bloks[blokNama] || 0) - qty).toFixed(2))
         }
       } else if (globalTipe.value === 'OPNAME') {
-        currentStok = qty
         if (blokNama) {
+          const stokBlokLama = parseFloat(bloks[blokNama] || 0)
+          const selisih = qty - stokBlokLama
+          currentStok += selisih
           bloks[blokNama] = qty
+        } else {
+          currentStok = qty
         }
       }
 
