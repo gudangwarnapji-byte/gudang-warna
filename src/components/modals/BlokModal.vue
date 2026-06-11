@@ -3,7 +3,6 @@
     <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content border-0 shadow">
 
-        <!-- HEADER -->
         <div class="modal-header text-white" style="background:linear-gradient(135deg,#1e3c72,#2a5298)">
           <div class="w-100">
             <div class="d-flex justify-content-between align-items-center">
@@ -21,7 +20,6 @@
           </div>
         </div>
 
-        <!-- KELOLA BLOK -->
         <div v-if="showKelolaBlok && isAdmin" class="border-bottom p-3 bg-light">
           <div class="d-flex gap-2 align-items-center flex-wrap">
             <input type="text" class="form-control form-control-sm text-uppercase fw-bold"
@@ -41,7 +39,6 @@
           </div>
         </div>
 
-        <!-- SEARCH -->
         <div class="px-3 py-2 border-bottom bg-white">
           <div class="input-group input-group-sm shadow-sm">
             <span class="input-group-text bg-white border-0">
@@ -57,11 +54,9 @@
           </div>
         </div>
 
-        <!-- BODY -->
         <div class="modal-body p-3" style="max-height:70vh;overflow-y:auto">
           <div class="row g-3">
 
-            <!-- PER BLOK -->
             <div v-for="blok in blokData" :key="blok.nama" class="col-12 col-md-6 col-lg-4">
               <div class="blok-card shadow-sm" :class="activeBlok === blok.nama ? 'blok-active' : ''"
                    @click="toggleBlok(blok.nama)">
@@ -89,21 +84,11 @@
                       </div>
                       <div class="text-end ms-2">
                         <div class="fw-bold"
-                             :class="(item.stok||0) < 5 ? 'text-danger' : 'text-success'"
+                             :class="(item.stokBlok||0) < 5 ? 'text-danger' : 'text-success'"
                              style="font-size:.9rem">
-                          {{ fmt(item.stok) }} Kg
+                          {{ fmt(item.stokBlok) }} Kg
                         </div>
                         <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end flex-wrap">
-                          <select class="form-select form-select-sm"
-                                  style="max-width:110px;font-size:.72rem"
-                                  :value="item.lokasi"
-                                  @change="assignBlok(item, $event.target.value)"
-                                  @click.stop>
-                            <option value="">Pindah Blok...</option>
-                            <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
-                              {{ b.nama }}
-                            </option>
-                          </select>
                           <button class="btn btn-xs btn-outline-success"
                                   @click.stop="quickTrans('MASUK', item)">
                             <i class="fas fa-arrow-down" style="font-size:.65rem"></i>
@@ -128,7 +113,6 @@
               </div>
             </div>
 
-            <!-- TANPA LOKASI -->
             <div class="col-12 col-md-6 col-lg-4" v-if="tanpaLokasi.length">
               <div class="blok-card shadow-sm border-warning"
                    :class="activeBlok === '__TANPALOKASI__' ? 'blok-active' : ''"
@@ -141,7 +125,7 @@
                     <span class="badge bg-warning text-dark fw-bold">{{ tanpaLokasi.length }} Item</span>
                   </div>
                   <div class="mt-2 fw-bold text-warning" style="font-size:1.1rem">
-                    {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.stok)||0), 0)) }} Kg
+                    {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.sisaTanpaBlok)||0), 0)) }} Kg
                   </div>
                 </div>
                 <div v-if="activeBlok === '__TANPALOKASI__'" class="blok-items">
@@ -154,9 +138,9 @@
                       </div>
                       <div class="text-end ms-2">
                         <div class="fw-bold"
-                             :class="(item.stok||0) < 5 ? 'text-danger' : 'text-success'"
+                             :class="(item.sisaTanpaBlok||0) < 5 ? 'text-danger' : 'text-success'"
                              style="font-size:.9rem">
-                          {{ fmt(item.stok) }} Kg
+                          {{ fmt(item.sisaTanpaBlok) }} Kg
                         </div>
                         <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end flex-wrap">
                           <select class="form-select form-select-sm"
@@ -188,7 +172,7 @@
                   <div class="blok-total">
                     <span class="text-muted">Total Tanpa Lokasi</span>
                     <span class="fw-bold text-warning">
-                      {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.stok)||0), 0)) }} Kg
+                      {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.sisaTanpaBlok)||0), 0)) }} Kg
                     </span>
                   </div>
                 </div>
@@ -198,7 +182,6 @@
           </div>
         </div>
 
-        <!-- FOOTER -->
         <div class="modal-footer bg-light py-2 d-flex justify-content-between fw-bold small">
           <div>Total Blok: <span class="text-primary">{{ blokData.length }}</span></div>
           <div>Grand Total: <span class="text-primary fs-6">{{ fmt(grandTotal) }}</span> Kg</div>
@@ -260,8 +243,14 @@ const hapusBlok = async (id) => {
 const assignBlok = async (item, namaBlok) => {
   if (!namaBlok) return
   try {
+    const sisa = parseFloat(item.sisaTanpaBlok) || 0
+    if (sisa <= 0) return
+
+    const bloks = { ...(item.bloks || {}) }
+    bloks[namaBlok.toUpperCase()] = (parseFloat(bloks[namaBlok.toUpperCase()]) || 0) + sisa
+
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      lokasi: namaBlok.toUpperCase()
+      bloks: bloks
     })
     window.Swal.fire({
       icon: 'success',
@@ -274,11 +263,22 @@ const assignBlok = async (item, namaBlok) => {
   }
 }
 
+// LOGIKA MULTI-BLOK UNTUK RENDER BLOK
 const blokData = computed(() => {
   return masterBlok.value.map(blok => {
-    let items = dbStok.value.filter(i =>
-      (i.lokasi || '').toUpperCase() === blok.nama
-    )
+    let items = []
+    let totalStok = 0
+    
+    dbStok.value.forEach(i => {
+      if (i.bloks && i.bloks[blok.nama]) {
+        items.push({
+          ...i,
+          stokBlok: parseFloat(i.bloks[blok.nama])
+        })
+        totalStok += parseFloat(i.bloks[blok.nama])
+      }
+    })
+
     if (searchBlok.value) {
       const q = searchBlok.value.toLowerCase()
       items = items.filter(i =>
@@ -286,14 +286,37 @@ const blokData = computed(() => {
         (i.kodeErp || '').toLowerCase().includes(q) ||
         (i.warna   || '').toLowerCase().includes(q)
       )
+      // Hitung ulang total untuk item yang match search
+      totalStok = items.reduce((s, i) => s + i.stokBlok, 0)
     }
-    const totalStok = items.reduce((s, i) => s + (parseFloat(i.stok) || 0), 0)
+    
     return { nama: blok.nama, items, totalStok }
   }).filter(blok => searchBlok.value ? blok.items.length > 0 : true)
 })
 
+// LOGIKA UNTUK BARANG TANPA BLOK ATAU ADA SELISIH TOTAL STOK
 const tanpaLokasi = computed(() => {
-  let items = dbStok.value.filter(i => !i.lokasi || i.lokasi.trim() === '')
+  let items = []
+  
+  dbStok.value.forEach(i => {
+    const totalStok = parseFloat(i.stok) || 0
+    let stokDiBlok = 0
+    if (i.bloks) {
+       stokDiBlok = Object.values(i.bloks).reduce((s, val) => s + parseFloat(val), 0)
+    }
+    
+    // Cari selisih antara Total Stok dan Jumlah Stok di Semua Blok
+    const selisih = totalStok - stokDiBlok
+    
+    // Jika ada sisa stok yang tidak masuk blok mana pun (toleransi 0.01)
+    if (selisih > 0.01) {
+       items.push({
+         ...i,
+         sisaTanpaBlok: selisih
+       })
+    }
+  })
+
   if (searchBlok.value) {
     const q = searchBlok.value.toLowerCase()
     items = items.filter(i =>
