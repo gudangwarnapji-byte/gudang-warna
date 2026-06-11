@@ -79,7 +79,7 @@
             <span class="input-group-text">Kg</span>
           </div>
 
-          <div v-if="qty" class="mt-3 p-2 rounded" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+          <div v-if="qty !== '' && qty !== null" class="mt-3 p-2 rounded" style="background: #f8f9fa; border: 1px solid #dee2e6;">
             <div v-if="tipe === 'OPNAME'" class="small fw-bold text-end mb-2">
               <span :class="selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : 'text-muted'">
                 {{ selisih > 0 ? `Selisih Lebih: +${fmt(selisih)}` : selisih < 0 ? `Selisih Kurang: ${fmt(selisih)}` : 'Stok Akurat (0)' }} Kg
@@ -111,7 +111,7 @@
               type="button"
               class="btn btn-lg fw-bold text-white shadow-sm"
               :class="btnClass"
-              :disabled="submitting || !qty"
+              :disabled="submitting || qty === '' || qty === null"
               @click="submit"
             >
               <i class="fas fa-save me-2"></i> {{ submitting ? 'Memproses...' : 'SIMPAN TRANSAKSI' }}
@@ -170,7 +170,7 @@ const saldoAwalTerpilih = computed(() => {
 })
 
 const selisih = computed(() => {
-  if (tipe.value !== 'OPNAME' || !qty.value) return 0
+  if (tipe.value !== 'OPNAME' || qty.value === '' || qty.value === null) return 0
   return parseFloat(qty.value) - saldoAwalTerpilih.value
 })
 
