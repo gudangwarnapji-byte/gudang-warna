@@ -89,6 +89,18 @@
                           {{ fmt(item.stokBlok) }} Kg
                         </div>
                         <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end flex-wrap">
+                          
+                          <select class="form-select form-select-sm"
+                                  style="max-width:110px;font-size:.72rem"
+                                  value=""
+                                  @change="assignBlok(item, $event.target.value, blok.nama); $event.target.value=''"
+                                  @click.stop>
+                            <option value="">Pindah Blok...</option>
+                            <option v-for="b in masterBlok" :key="b.id" :value="b.nama" :disabled="b.nama === blok.nama">
+                              {{ b.nama }}
+                            </option>
+                          </select>
+                          
                           <button class="btn btn-xs btn-outline-success"
                                   @click.stop="quickTrans('MASUK', item)">
                             <i class="fas fa-arrow-down" style="font-size:.65rem"></i>
@@ -143,16 +155,18 @@
                           {{ fmt(item.sisaTanpaBlok) }} Kg
                         </div>
                         <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end flex-wrap">
+                          
                           <select class="form-select form-select-sm"
                                   style="max-width:110px;font-size:.72rem"
                                   value=""
-                                  @change="assignBlok(item, $event.target.value)"
+                                  @change="assignBlok(item, $event.target.value, null); $event.target.value=''"
                                   @click.stop>
                             <option value="">Set Blok...</option>
                             <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
                               {{ b.nama }}
                             </option>
                           </select>
+                          
                           <button class="btn btn-xs btn-outline-success"
                                   @click.stop="quickTrans('MASUK', item)">
                             <i class="fas fa-arrow-down" style="font-size:.65rem"></i>
@@ -240,21 +254,36 @@ const hapusBlok = async (id) => {
   await remove(dbRef(db, `master_blok/${id}`))
 }
 
-const assignBlok = async (item, namaBlok) => {
-  if (!namaBlok) return
+// LOGIKA PINDAH BLOK YANG BARU
+const assignBlok = async (item, targetBlok, asalBlok = null) => {
+  if (!targetBlok) return
   try {
-    const sisa = parseFloat(item.sisaTanpaBlok) || 0
-    if (sisa <= 0) return
-
     const bloks = { ...(item.bloks || {}) }
-    bloks[namaBlok.toUpperCase()] = (parseFloat(bloks[namaBlok.toUpperCase()]) || 0) + sisa
+    let qtyYangDipindah = 0;
 
+    if (asalBlok) {
+      // Mindahin dari Blok A ke Blok B
+      qtyYangDipindah = parseFloat(item.stokBlok) || 0;
+      if (qtyYangDipindah <= 0) return;
+      delete bloks[asalBlok]; // Cabut dari blok asal
+    } else {
+      // Set dari Tanpa Lokasi ke Blok Baru
+      qtyYangDipindah = parseFloat(item.sisaTanpaBlok) || 0;
+      if (qtyYangDipindah <= 0) return;
+    }
+
+    // Masukin qty ke blok tujuan (ditambah kalau blok tujuan udah ada isinya)
+    const targetKey = targetBlok.toUpperCase();
+    bloks[targetKey] = (parseFloat(bloks[targetKey]) || 0) + qtyYangDipindah;
+
+    // Update ke Firebase
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
       bloks: bloks
-    })
+    });
+
     window.Swal.fire({
       icon: 'success',
-      title: `Dipindah ke Blok ${namaBlok}`,
+      title: asalBlok ? `Dipindah ke ${targetBlok}` : `Diset ke Blok ${targetBlok}`,
       timer: 1000,
       showConfirmButton: false
     })
@@ -286,7 +315,6 @@ const blokData = computed(() => {
         (i.kodeErp || '').toLowerCase().includes(q) ||
         (i.warna   || '').toLowerCase().includes(q)
       )
-      // Hitung ulang total untuk item yang match search
       totalStok = items.reduce((s, i) => s + i.stokBlok, 0)
     }
     
@@ -305,10 +333,8 @@ const tanpaLokasi = computed(() => {
        stokDiBlok = Object.values(i.bloks).reduce((s, val) => s + parseFloat(val), 0)
     }
     
-    // Cari selisih antara Total Stok dan Jumlah Stok di Semua Blok
     const selisih = totalStok - stokDiBlok
     
-    // Jika ada sisa stok yang tidak masuk blok mana pun (toleransi 0.01)
     if (selisih > 0.01) {
        items.push({
          ...i,
