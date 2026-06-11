@@ -198,7 +198,7 @@ const btnClass = computed(() => ({
 const modalTitle = computed(() => ({
   MASUK:  'Transaksi Masuk',
   KELUAR: 'Transaksi Keluar',
-  OPNAME: 'Opname Stok'
+  OPNAME: 'Penyesuaian Stok'
 }[tipe.value] || 'Transaksi'))
 
 watch(() => activeTrans.value, val => {
