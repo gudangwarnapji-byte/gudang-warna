@@ -38,8 +38,12 @@
                   </select>
                 </div>
                 <div class="col-md-3">
-                  <input type="datetime-local" class="form-control" v-model="globalDate">
-                </div>
+<div class="d-flex gap-1">
+  <input type="date" class="form-control" v-model="globalDatePart"
+         style="flex:2">
+  <input type="time" class="form-control" v-model="globalTimePart"
+         style="flex:1">
+</div>
                 <div class="col-md-3">
                   <input type="text" class="form-control text-uppercase" v-model="globalKet" placeholder="Keterangan Umum">
                 </div>
@@ -172,7 +176,14 @@ const emit = defineEmits(['close'])
 const { refreshData } = useStok()
 
 const globalTipe = ref('MASUK')
-const globalDate = ref('')
+const globalDatePart = ref(new Date().toISOString().slice(0, 10))
+const globalTimePart = ref(new Date().toTimeString().slice(0, 5))
+
+const globalDate = computed(() =>
+  globalDatePart.value && globalTimePart.value
+    ? `${globalDatePart.value}T${globalTimePart.value}`
+    : ''
+)
 const globalKet  = ref('')
 const submitting = ref(false)
 const rows       = ref([])
