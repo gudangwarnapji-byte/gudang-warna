@@ -1,0 +1,39 @@
+# File: .github/workflows/autobackup.yml
+name: 🗄️ Auto Backup Database Firebase
+
+on:
+  schedule:
+    # Jalan otomatis setiap jam 17:00 UTC (Sama dengan Jam 00:00 WIB/Tengah Malam)
+    - cron: '0 17 * * *'
+  
+  # Baris di bawah ini bikin kita bisa klik tombol "Run workflow" manual di GitHub
+  workflow_dispatch:
+
+jobs:
+  backup-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Tarik Kode Repository
+        uses: actions/checkout@v3
+
+      - name: ⚙️ Setup Node.js Lingkungan Robot
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: 📦 Install Firebase Admin SDK
+        run: npm install firebase-admin
+
+      - name: 🚀 Jalankan Script Backup
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+        run: node scripts/backup.js
+
+      - name: 💾 Commit & Push Hasil Backup ke Repo
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add database-backups/
+          git commit -m "🗄️ Auto-backup database: $(date +'%Y-%m-%d')" || echo "Tidak ada perubahan data"
+          git push
