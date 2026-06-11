@@ -20,7 +20,7 @@
         <template v-if="isAdmin">
           <button class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm flex-shrink-0"
                   @click="bukaAddModal">
-            <i class="fas fa-plus-circle me-1"></i> Item
+            <i class="fas fa-plus-circle me-1"></i> Barang
           </button>
           <button class="btn btn-sm btn-primary fw-bold shadow-sm flex-shrink-0"
                   style="border-radius:8px" @click="bukaBatch" title="Input Massal Excel">
@@ -45,32 +45,10 @@
           </button>
         </template>
 
-        <div class="dropdown flex-shrink-0">
-          <button class="btn btn-sm btn-info text-white fw-bold rounded-pill px-3 shadow-sm dropdown-toggle"
-                  type="button" data-bs-toggle="dropdown">
-            <i class="fas fa-folder-open me-1"></i> Laporan
-          </button>
-          <ul class="dropdown-menu border-0 shadow-lg" style="border-radius:12px;font-size:.9rem">
-            <li><h6 class="dropdown-header fw-bold text-primary">PILIH LAPORAN</h6></li>
-            <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaDaily">
-              <i class="fas fa-calendar-day text-info" style="width:24px;text-align:center"></i> Rekap Harian
-            </a></li>
-            <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaMutasi">
-              <i class="fas fa-exchange-alt text-success" style="width:24px;text-align:center"></i> Laporan Mutasi
-            </a></li>
-            <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaBulanan">
-              <i class="fas fa-calendar-alt" style="color:#6f42c1;width:24px;text-align:center"></i> Arus Bulanan
-            </a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaSuratJalan">
-              <i class="fas fa-file-pdf text-danger" style="width:24px;text-align:center"></i> Surat Jalan PDF
-            </a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaBlok">
-              <i class="fas fa-th-large text-primary" style="width:24px;text-align:center"></i> Peta Blok
-            </a></li>
-          </ul>
-        </div>
+        <button class="btn btn-sm btn-info text-white fw-bold rounded-pill px-3 shadow-sm flex-shrink-0"
+                @click="showLaporan = true">
+          <i class="fas fa-folder-open me-1"></i> Laporan
+        </button>
 
         <img v-if="user?.photoURL" :src="user.photoURL" class="user-avatar flex-shrink-0 ms-1">
         <button class="btn btn-sm btn-danger rounded-circle flex-shrink-0"
@@ -81,11 +59,40 @@
       </div>
 
     </div>
+
+    <div v-if="showLaporan">
+      <div class="position-fixed top-0 start-0 w-100 h-100" 
+           style="background: rgba(0,0,0,0.1); z-index: 1040;" 
+           @click="showLaporan = false"></div>
+      
+      <ul class="dropdown-menu show border-0 shadow-lg d-block" 
+          style="position: fixed; top: 75px; left: 50%; transform: translateX(-50%); z-index: 1050; border-radius:12px; font-size:.9rem; min-width: 220px;">
+        <li><h6 class="dropdown-header fw-bold text-primary text-center">PILIH LAPORAN</h6></li>
+        <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaDaily)">
+          <i class="fas fa-calendar-day text-info" style="width:24px;text-align:center"></i> Rekap Harian
+        </a></li>
+        <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaMutasi)">
+          <i class="fas fa-exchange-alt text-success" style="width:24px;text-align:center"></i> Laporan Mutasi
+        </a></li>
+        <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaBulanan)">
+          <i class="fas fa-calendar-alt" style="color:#6f42c1;width:24px;text-align:center"></i> Arus Bulanan
+        </a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaSuratJalan)">
+          <i class="fas fa-file-pdf text-danger" style="width:24px;text-align:center"></i> Surat Jalan PDF
+        </a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaBlok)">
+          <i class="fas fa-th-large text-primary" style="width:24px;text-align:center"></i> Peta Blok
+        </a></li>
+      </ul>
+    </div>
+
   </nav>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue' // Tambah import ref
 import { ref as dbRef, get, update } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth, user, currentRole } from '../composables/useAuth'
@@ -111,6 +118,15 @@ const { bukaSuratJalan } = useSuratJalan()
 const { bukaBlok }     = useBlok()
 
 const isAdmin = computed(() => currentRole.value === 'admin')
+
+// State untuk mengontrol buka/tutup menu Laporan
+const showLaporan = ref(false)
+
+// Fungsi untuk membuka laporan sekaligus menutup dropdown
+const bukaLaporan = (fungsiBuka) => {
+  showLaporan.value = false // Tutup menu dulu
+  fungsiBuka() // Baru jalanin fungsi modalnya
+}
 
 const getTipeGrade = kode => {
   const k    = (kode || '').toUpperCase()
@@ -142,7 +158,6 @@ const jalankanAudit = async () => {
     Object.keys(masters).forEach(id => {
       let run = Number(masters[id].stokAwal) || 0
 
-      // Kumpulkan pergerakan per blok
       const blokChanges = {}
 
       Object.values(histories[id] || {})
@@ -168,7 +183,6 @@ const jalankanAudit = async () => {
 
       updates[`stok_benang/${id}/stok`] = run
 
-      // Update bloks — gabungkan dengan bloks yang sudah ada
       const bloksLama = masters[id].bloks || {}
       const bloksBaru = { ...bloksLama }
 
@@ -240,10 +254,10 @@ const exportStok = () => {
 
 /* CSS Khusus Swipeable Menu HP */
 .swipe-menu {
-  -webkit-overflow-scrolling: touch; /* Biar scroll smooth di iPhone */
-  scrollbar-width: none; /* Sembunyikan scrollbar di Firefox */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; 
 }
 .swipe-menu::-webkit-scrollbar {
-  display: none; /* Sembunyikan scrollbar di Chrome/Safari */
+  display: none; 
 }
 </style>
