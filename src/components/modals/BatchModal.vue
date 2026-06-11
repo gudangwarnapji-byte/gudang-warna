@@ -39,16 +39,16 @@
                     <option value="OPNAME">ADJ (Opname)</option>
                   </select>
                 </div>
-                <div class="col-md-2 col-6">
-                  <input type="date" class="form-control form-control-sm" v-model="globalDatePart">
+                
+                <div class="col-md-3 col-6">
+                  <input type="datetime-local" class="form-control form-control-sm fw-bold" v-model="globalDateTime">
                 </div>
-                <div class="col-md-2 col-4">
-                  <input type="time" class="form-control form-control-sm" v-model="globalTimePart">
-                </div>
-                <div class="col-md-3 col-8">
+                
+                <div class="col-md-4 col-12">
                   <input type="text" class="form-control form-control-sm text-uppercase"
                          v-model="globalKet" placeholder="KETERANGAN UMUM">
                 </div>
+                
                 <div class="col-md-3 col-12">
                   <select class="form-select form-select-sm fw-bold border-success" v-model="globalBlok">
                     <option value="">-- Blok (Semua) --</option>
@@ -66,12 +66,12 @@
                   <thead class="table-light sticky-top text-center">
                     <tr>
                       <th style="width:4%">#</th>
-                      <th style="width:32%">KODE / NAMA</th>
+                      <th style="width:36%">KODE / NAMA</th>
                       <th style="width:12%">WARNA</th>
-                      <th style="width:14%">BLOK</th>
+                      <th style="width:15%">BLOK</th>
                       <th style="width:13%">QTY (KG)</th>
-                      <th style="width:20%">PREVIEW SALDO</th>
-                      <th style="width:5%"> </th>
+                      <th style="width:15%">PREVIEW SALDO</th>
+                      <th style="width:5%">X</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -193,19 +193,18 @@ import { masterBlok } from '../../composables/useBlok'
 const emit = defineEmits(['close'])
 const { refreshData } = useStok()
 
+// Fungsi mengambil waktu lokal format: YYYY-MM-DDTHH:mm
+const getWaktuLokal = () => {
+  const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+  return (new Date(Date.now() - tzOffset)).toISOString().slice(0, 16);
+}
+
 const globalTipe     = ref('MASUK')
-const globalDatePart = ref(new Date().toISOString().slice(0, 10))
-const globalTimePart = ref(new Date().toTimeString().slice(0, 5))
+const globalDateTime = ref(getWaktuLokal())
 const globalKet      = ref('')
 const globalBlok     = ref('')
 const submitting     = ref(false)
 const rows           = ref([])
-
-const globalDate = computed(() =>
-  globalDatePart.value && globalTimePart.value
-    ? `${globalDatePart.value}T${globalTimePart.value}`
-    : ''
-)
 
 // Auto-apply globalBlok ke semua baris
 watch(globalBlok, val => {
@@ -369,7 +368,7 @@ const submit = async () => {
   submitting.value = true
   try {
     const updates = {}
-    const base = globalDate.value ? new Date(globalDate.value) : new Date()
+    const base = globalDateTime.value ? new Date(globalDateTime.value) : new Date()
 
     valid.forEach((row, i) => {
       const item    = dbStok.value.find(x => x.idUnik === row.itemId)
