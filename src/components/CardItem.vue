@@ -2,7 +2,6 @@
   <div class="col-12 col-md-6 col-lg-4">
     <div class="card-item shadow-sm p-3" :style="{ background: isCritical ? '#fff0f0' : '#fff' }">
 
-      <!-- HEADER -->
       <div class="d-flex justify-content-between mb-2">
         <h5 class="fw-bold text-primary m-0 text-truncate" style="letter-spacing:-.5px">
           {{ item.nama }}
@@ -14,32 +13,39 @@
         </div>
       </div>
 
-      <!-- INFO -->
       <div class="mb-3">
         <small class="text-muted d-block mb-2">
           {{ item.warna }} | <b>{{ item.kodeErp }}</b>
         </small>
-        <div class="d-flex gap-2 mt-1">
-          <div v-if="namaBlok" class="blok-pill">
-            <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
-            Blok {{ namaBlok }}
-          </div>
-          <div v-else class="blok-pill-empty">
-            <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
-            Belum ada blok
-          </div>
+        
+        <div class="d-flex flex-wrap gap-2 mt-1">
+          <template v-if="daftarBlok.length">
+            <div v-for="b in daftarBlok" :key="b.nama" class="blok-pill">
+              <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
+              {{ b.nama }} <span class="ms-1 fw-bold opacity-75">({{ fmt(b.qty) }})</span>
+            </div>
+            <div v-if="sisaTanpaBlok > 0" class="blok-pill-warning">
+              <i class="fas fa-map-marker-alt me-1" style="font-size:.7rem"></i>
+              Tanpa Lokasi <span class="ms-1 fw-bold">({{ fmt(sisaTanpaBlok) }})</span>
+            </div>
+          </template>
+          
+          <template v-else>
+            <div class="blok-pill-empty">
+              <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
+              Belum ada blok terdaftar
+            </div>
+          </template>
         </div>
       </div>
 
-      <!-- STOK -->
       <div class="stok-row mb-3" :class="isCritical ? 'stok-kritis' : ''">
-        <span class="stok-row-lbl">Stok saat ini</span>
+        <span class="stok-row-lbl">Total Stok Saat Ini</span>
         <span class="stok-row-val" :class="isCritical ? 'text-danger' : 'text-safe'">
           {{ fmt(item.stok) }} Kg
         </span>
       </div>
 
-      <!-- ACTIONS -->
       <div v-if="role === 'admin'" class="d-flex gap-1">
         <button class="btn btn-outline-success flex-grow-1 fw-bold"
                 @click="$emit('transaksi', 'MASUK', item)">Masuk</button>
@@ -67,7 +73,6 @@
 
 <script setup>
 import { computed } from 'vue'
-import { masterBlok } from '../composables/useBlok'
 
 const props = defineProps({
   item: Object,
@@ -77,7 +82,7 @@ const props = defineProps({
 
 defineEmits(['transaksi', 'riwayat'])
 
-const fmt = n => Number(n).toLocaleString('id-ID', {
+const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
 })
 
@@ -103,13 +108,21 @@ const velocityBadge = computed(() => {
   return '<span class="badge bg-secondary badge-custom ms-1 fw-bold">DEAD</span>'
 })
 
-const namaBlok = computed(() => {
-  if (!props.item?.lokasi) return ''
-  if (!masterBlok.value?.length) return ''
-  const blok = masterBlok.value.find(b =>
-    b.nama === (props.item.lokasi || '').toUpperCase()
-  )
-  return blok ? blok.nama : ''
+// Logika membaca objek "bloks"
+const daftarBlok = computed(() => {
+  const bloks = props.item?.bloks
+  if (!bloks) return []
+  return Object.entries(bloks)
+    .filter(([_, qty]) => parseFloat(qty) > 0)
+    .map(([nama, qty]) => ({ nama, qty: parseFloat(qty) }))
+})
+
+// Menghitung apakah ada stok yang nyangkut tidak punya blok
+const sisaTanpaBlok = computed(() => {
+  const totalStok = parseFloat(props.item?.stok) || 0
+  const stokDiBlok = daftarBlok.value.reduce((s, b) => s + b.qty, 0)
+  const selisih = totalStok - stokDiBlok
+  return selisih > 0.01 ? selisih : 0
 })
 </script>
 
@@ -127,6 +140,13 @@ const namaBlok = computed(() => {
   padding: 4px 10px; border-radius: 6px;
   background: #E6F1FB; color: #0C447C;
   border: 1px solid #B5D4F4;
+}
+.blok-pill-warning {
+  display: inline-flex; align-items: center;
+  font-size: .75rem; font-weight: 600;
+  padding: 4px 10px; border-radius: 6px;
+  background: #fff8e1; color: #856404;
+  border: 1px solid #ffeeba;
 }
 .blok-pill-empty {
   display: inline-flex; align-items: center;
