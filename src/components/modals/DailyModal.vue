@@ -3,7 +3,6 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content border-0 shadow">
 
-        <!-- HEADER -->
         <div class="modal-header bg-info text-white pb-3">
           <div class="w-100">
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -18,68 +17,79 @@
               <button class="btn btn-success fw-bold ms-1" @click="exportExcel">
                 <i class="fas fa-file-excel"></i>
               </button>
+              <button v-if="currentRole === 'admin' && checkedIds.length"
+                      class="btn btn-danger fw-bold ms-1"
+                      @click="hapusTerpilih">
+                <i class="fas fa-trash-alt me-1"></i>Hapus ({{ checkedIds.length }})
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- BODY -->
         <div class="modal-body p-0">
           <div class="table-responsive" style="max-height:50vh;overflow-y:auto">
             <table class="table table-hover mb-0 align-middle small">
-<thead class="table-light sticky-top shadow-sm">
-  <tr>
-    <th>Kode &amp; Nama Barang</th>
-    <th>Tipe</th>
-    <th class="text-end">Qty (Kg)</th>
-    <th>Keterangan</th>
-    <th v-if="currentRole === 'admin'" class="text-center">Aksi</th>
-  </tr>
-</thead>
+              <thead class="table-light sticky-top shadow-sm">
+                <tr>
+                  <th v-if="currentRole === 'admin'" class="text-center" style="width:40px">
+                    <input type="checkbox" class="form-check-input"
+                           :checked="allChecked"
+                           @change="toggleAll">
+                  </th>
+                  <th>Kode &amp; Nama Barang</th>
+                  <th>Tipe</th>
+                  <th class="text-end">Qty (Kg)</th>
+                  <th>Keterangan</th>
+                  <th v-if="currentRole === 'admin'" class="text-center">Aksi</th>
+                </tr>
+              </thead>
               <tbody>
                 <template v-if="loading">
-                  <tr><td colspan="4" class="text-center py-4">
+                  <tr><td :colspan="currentRole === 'admin' ? 6 : 4" class="text-center py-4">
                     <div class="spinner-border text-info"></div>
                   </td></tr>
                 </template>
                 <template v-else-if="groupedLogs.length">
                   <template v-for="group in groupedLogs" :key="group.tipe + group.ket">
-                    <!-- HEADER TIPE -->
                     <tr :class="tipeRowClass(group.tipe)">
-                      <td colspan="4" class="fw-bold py-2">
+                      <td :colspan="currentRole === 'admin' ? 6 : 4" class="fw-bold py-2">
                         <i :class="tipeIcon(group.tipe)" class="me-2"></i>
                         TRANSAKSI: {{ group.tipe }}
                       </td>
                     </tr>
-                    <!-- HEADER KET -->
                     <tr class="bg-light">
-                      <td colspan="4" class="fw-bold text-secondary py-2 ps-3" style="font-size:.85rem">
+                      <td :colspan="currentRole === 'admin' ? 6 : 4" class="fw-bold text-secondary py-2 ps-3" style="font-size:.85rem">
                         <i class="fas fa-tag me-1 text-muted"></i> KETERANGAN: {{ group.ket }}
                       </td>
                     </tr>
-                    <!-- ROWS -->
-<tr v-for="r in group.rows" :key="r.trxId">
-  <td class="ps-4">
-    <div class="fw-bold text-dark" style="line-height:1.1">{{ r.namaBarang }}</div>
-    <div style="font-size:.7rem" class="text-muted font-monospace">{{ r.kodeErpRef }}</div>
-  </td>
-  <td><span class="badge" :class="tipeBadgeClass(r.tipe)">{{ r.tipe }}</span></td>
-  <td class="text-end fw-bold">{{ fmt(r.qty) }}</td>
-  <td>
-    <span class="badge badge-ket text-uppercase shadow-sm" :class="ketBadgeClass(r.keterangan)">
-      {{ r.keterangan || '-' }}
-    </span>
-  </td>
-  <td v-if="currentRole === 'admin'" class="text-center">
-    <button class="btn btn-sm btn-link text-warning p-0"
-            @click="editDariHarian(r)">
-      <i class="fas fa-pencil-alt"></i>
-    </button>
-  </td>
-</tr>
+                    <tr v-for="r in group.rows" :key="r.trxId" :class="checkedIds.includes(r.parentId+'|'+r.trxId) ? 'table-danger' : ''">
+                      <td v-if="currentRole === 'admin'" class="text-center">
+                        <input type="checkbox" class="form-check-input"
+                               :value="r.parentId+'|'+r.trxId"
+                               v-model="checkedIds">
+                      </td>
+                      <td class="ps-4">
+                        <div class="fw-bold text-dark" style="line-height:1.1">{{ r.namaBarang }}</div>
+                        <div style="font-size:.7rem" class="text-muted font-monospace">{{ r.kodeErpRef }}</div>
+                      </td>
+                      <td><span class="badge" :class="tipeBadgeClass(r.tipe)">{{ r.tipe }}</span></td>
+                      <td class="text-end fw-bold">{{ fmt(r.qty) }}</td>
+                      <td>
+                        <span class="badge badge-ket text-uppercase shadow-sm" :class="ketBadgeClass(r.keterangan)">
+                          {{ r.keterangan || '-' }}
+                        </span>
+                      </td>
+                      <td v-if="currentRole === 'admin'" class="text-center">
+                        <button class="btn btn-sm btn-link text-warning p-0"
+                                @click="editDariHarian(r)">
+                          <i class="fas fa-pencil-alt"></i>
+                        </button>
+                      </td>
+                    </tr>
                   </template>
                 </template>
                 <template v-else>
-                  <tr><td colspan="4" class="text-center py-5 text-muted">
+                  <tr><td :colspan="currentRole === 'admin' ? 6 : 4" class="text-center py-5 text-muted">
                     Tidak ada aktivitas pada tanggal ini
                   </td></tr>
                 </template>
@@ -88,7 +98,6 @@
           </div>
         </div>
 
-        <!-- FOOTER SUMMARY -->
         <div class="modal-footer bg-light py-3 d-block border-top">
           <div class="d-flex flex-wrap gap-2 justify-content-center">
             <div
@@ -118,49 +127,155 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { ref as dbRef, onValue } from 'firebase/database'
+import { ref as dbRef, get, update } from 'firebase/database'
 import { db } from '../../firebase'
-import { dbStok } from '../../composables/useStok'
-import { useEditTrans, activeEditTrans } from '../../composables/useEditTrans'
+import { dbStok, useStok } from '../../composables/useStok'
+import { useEditTrans } from '../../composables/useEditTrans'
 import { currentRole } from '../../composables/useAuth'
-const { bukaEdit } = useEditTrans()
+
 const emit = defineEmits(['close'])
-const editDariHarian = (r) => {
-  bukaEdit(r, r.parentId)
-  emit('close')
-}
+const { refreshData } = useStok()
+const { bukaEdit } = useEditTrans()
+
 const tglPicker = ref(new Date().toISOString().slice(0, 10))
 const loading = ref(false)
 const logs = ref([])
+const checkedIds = ref([]) // State untuk nyimpen checkbox
 
 const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
 })
 
-const loadData = () => {
+const editDariHarian = (r) => {
+  bukaEdit(r, r.parentId)
+  emit('close')
+}
+
+// Computed & Method untuk Checkbox "Pilih Semua"
+const allChecked = computed(() => {
+  const allIds = logs.value.map(r => r.parentId + '|' + r.trxId)
+  return allIds.length > 0 && allIds.every(id => checkedIds.value.includes(id))
+})
+
+const toggleAll = (e) => {
+  if (e.target.checked) {
+    checkedIds.value = logs.value.map(r => r.parentId + '|' + r.trxId)
+  } else {
+    checkedIds.value = []
+  }
+}
+
+// Load Data
+const loadData = async () => {
   loading.value = true
   logs.value = []
-  onValue(dbRef(db, 'riwayat_transaksi'), snap => {
-    loading.value = false
-    const all = snap.val()
+  checkedIds.value = [] // Kosongin centangan kalau ganti tanggal
+  try {
+    const snap = await get(dbRef(db, 'riwayat_transaksi'))
+    const all = snap.val() || {}
     const result = []
-    if (all) {
-      Object.keys(all).forEach(pId => {
-        Object.values(all[pId] || {}).forEach(trx => {
-          if (trx.tanggal?.startsWith(tglPicker.value)) {
-            const m = dbStok.value.find(x => x.idUnik === pId)
-            result.push({
-              ...trx,
-              namaBarang: m?.nama || 'N/A',
-              kodeErpRef: m?.kodeErp || '-',
-              parentId: pId
-            })
-          }
-        })
+    Object.keys(all).forEach(pId => {
+      Object.values(all[pId] || {}).forEach(trx => {
+        if (trx.tanggal?.startsWith(tglPicker.value)) {
+          const m = dbStok.value.find(x => x.idUnik === pId)
+          result.push({
+            ...trx,
+            namaBarang: m?.nama || 'N/A',
+            kodeErpRef: m?.kodeErp || '-',
+            parentId: pId
+          })
+        }
       })
-    }
+    })
     logs.value = result
-  }, { onlyOnce: true })
+  } finally {
+    loading.value = false
+  }
+}
+
+// Fungsi Delete Bulk & Audit Stok
+const hapusTerpilih = async () => {
+  if (!checkedIds.value.length) return
+  const result = await window.Swal.fire({
+    title: `Hapus ${checkedIds.value.length} Transaksi?`,
+    text: 'Data akan dihapus permanen dan stok dihitung ulang.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    confirmButtonText: 'Ya, Hapus!'
+  })
+  
+  if (!result.isConfirmed) return
+
+  window.Swal.fire({
+    title: 'Memproses...',
+    allowOutsideClick: false,
+    didOpen: () => window.Swal.showLoading()
+  })
+
+  try {
+    const parentIds = new Set()
+    const delUpdates = {}
+
+    // Tandai data yang mau di null-kan (hapus)
+    checkedIds.value.forEach(val => {
+      const [pId, tId] = val.split('|')
+      delUpdates[`riwayat_transaksi/${pId}/${tId}`] = null
+      parentIds.add(pId)
+    })
+
+    // Eksekusi hapus di Firebase
+    await update(dbRef(db), delUpdates)
+
+    // Tarik ulang data untuk Re-Audit Stok
+    const [snapM, snapH] = await Promise.all([
+      get(dbRef(db, 'stok_benang')),
+      get(dbRef(db, 'riwayat_transaksi'))
+    ])
+    const masters = snapM.val() || {}
+    const histories = snapH.val() || {}
+    const auditUp = {}
+
+    parentIds.forEach(id => {
+      const item = masters[id]
+      if (!item) return
+      let run = Number(item.stokAwal) || 0
+      const bloks = {}
+
+      Object.values(histories[id] || {})
+        .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
+        .forEach(l => {
+          const q = Number(l.qty)
+          const blok = l.blok || ''
+          if (l.tipe === 'MASUK') {
+            run += q
+            if (blok) bloks[blok] = parseFloat(((bloks[blok] || 0) + q).toFixed(2))
+          } else if (l.tipe === 'KELUAR') {
+            run -= q
+            if (blok) bloks[blok] = parseFloat(((bloks[blok] || 0) - q).toFixed(2))
+          } else if (l.tipe === 'OPNAME') {
+            run = q
+            if (blok) bloks[blok] = q
+          }
+          run = parseFloat(run.toFixed(2))
+          auditUp[`riwayat_transaksi/${id}/${l.trxId}/stokAkhir`] = run
+        })
+
+      Object.keys(bloks).forEach(b => { if (bloks[b] <= 0) delete bloks[b] })
+
+      auditUp[`stok_benang/${id}/stok`] = run
+      auditUp[`stok_benang/${id}/bloks`] = bloks
+    })
+
+    if (Object.keys(auditUp).length) await update(dbRef(db), auditUp)
+
+    window.Swal.fire('Berhasil!', 'Transaksi dihapus & stok diaudit.', 'success')
+    refreshData()
+    loadData()
+
+  } catch(e) {
+    window.Swal.fire('Error', e.message, 'error')
+  }
 }
 
 const ORDER = ['MASUK', 'KELUAR', 'OPNAME']
@@ -236,7 +351,7 @@ const exportExcel = () => {
 }
 
 onMounted(() => loadData())
-  defineExpose({ loadData })
+defineExpose({ loadData })
 </script>
 
 <style scoped>
