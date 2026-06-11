@@ -10,6 +10,7 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - run: npm install firebase-admin    # <-- Tambahkan baris ini
       - run: node src/scripts/migrasi-blok.js
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
