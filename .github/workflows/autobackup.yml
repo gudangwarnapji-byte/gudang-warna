@@ -28,7 +28,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
-        run: node scripts/backup.js
+        run: node src/scripts/backup.js
 
       - name: 💾 Commit & Push Hasil Backup ke Repo
         run: |
