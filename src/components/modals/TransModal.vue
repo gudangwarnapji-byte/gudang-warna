@@ -8,7 +8,6 @@
         </div>
         <div class="modal-body">
 
-          <!-- INFO BARANG -->
           <div class="alert alert-light border mb-3">
             <div class="d-flex justify-content-between mb-1">
               <span class="fw-bold text-primary fs-5">{{ activeItem?.nama }}</span>
@@ -19,13 +18,39 @@
             </div>
             <div class="small text-muted">{{ activeItem?.warna }} | {{ activeItem?.kodeErp }}</div>
             <hr>
-            <div class="d-flex justify-content-between">
-              <span>Sisa Stok:</span>
-              <span class="fw-bold fs-5">{{ fmt(activeItem?.stok) }}</span>
+            <div class="d-flex justify-content-between align-items-center">
+              <span>Total Sisa Stok:</span>
+              <span class="fw-bold fs-5">{{ fmt(activeItem?.stok) }} <small class="text-muted fs-6">Kg</small></span>
+            </div>
+            
+            <div v-if="activeItem?.bloks && Object.keys(activeItem.bloks).length" class="mt-2 p-2 bg-white rounded border">
+              <div class="fw-bold text-secondary mb-1" style="font-size: 0.75rem;">RINCIAN LOKASI BLOK:</div>
+              <div v-for="(val, key) in activeItem.bloks" :key="key" class="d-flex justify-content-between border-bottom pb-1 mb-1 small">
+                <span class="text-dark fw-bold"><i class="fas fa-warehouse text-muted me-1"></i> {{ key }}</span>
+                <span class="text-primary fw-bold">{{ fmt(val) }} Kg</span>
+              </div>
             </div>
           </div>
 
-          <!-- INPUT QTY -->
+          <label class="fw-bold small">
+            {{ tipe === 'MASUK' ? 'MASUK KE BLOK' : tipe === 'KELUAR' ? 'AMBIL DARI BLOK' : 'OPNAME BLOK' }}
+            <span class="text-muted fw-normal" style="font-size:.7rem"> — opsional</span>
+          </label>
+          <select class="form-select form-select-lg mb-3 border-secondary fw-bold" v-model="blokPilih">
+            <option value="">-- Bebas / Tidak Pilih Blok --</option>
+            
+            <template v-if="(tipe === 'KELUAR' || tipe === 'OPNAME') && activeItem?.bloks">
+              <option v-for="(val, key) in activeItem.bloks" :key="'saran-'+key" :value="key">
+                {{ key }} (Tersedia: {{ fmt(val) }} Kg)
+              </option>
+              <option disabled>──────────────────</option>
+            </template>
+            
+            <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
+              {{ b.nama }}
+            </option>
+          </select>
+
           <label class="fw-bold small">JUMLAH (KG)</label>
           <div class="input-group input-group-lg">
             <input
@@ -33,51 +58,33 @@
               class="form-control fw-bold text-center"
               v-model="qty"
               ref="qtyInput"
+              placeholder="0.00"
             >
             <span class="input-group-text">Kg</span>
           </div>
 
-          <!-- LIVE SELISIH (OPNAME) -->
           <div v-if="tipe === 'OPNAME' && qty" class="mt-2 small fw-bold text-end">
             <span :class="selisih > 0 ? 'text-success' : selisih < 0 ? 'text-danger' : 'text-muted'">
               {{ selisih > 0 ? `Selisih Lebih: +${fmt(selisih)}` : selisih < 0 ? `Selisih Kurang: ${fmt(selisih)}` : 'Stok Akurat (0)' }} Kg
             </span>
           </div>
 
-          <!-- PILIH BLOK (OPSIONAL) -->
-          <label class="fw-bold small mt-3">
-            BLOK
-            <span class="text-muted fw-normal" style="font-size:.7rem"> — opsional</span>
-          </label>
-          <select class="form-select" v-model="blokPilih">
-            <option value="">-- Tidak mengubah blok --</option>
-            <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
-              {{ b.nama }}
-            </option>
-          </select>
-          <div v-if="activeItem?.lokasi" class="small text-muted mt-1">
-            <i class="fas fa-warehouse me-1"></i>
-            Blok saat ini: <b>{{ activeItem.lokasi }}</b>
-          </div>
-
-          <!-- KETERANGAN -->
           <input
             type="text"
             class="form-control mt-3"
             v-model="keterangan"
-            placeholder="Keterangan"
+            placeholder="Keterangan Tambahan (Opsional)"
           >
 
-          <!-- SUBMIT -->
-          <div class="d-grid mt-3">
+          <div class="d-grid mt-4">
             <button
               type="button"
-              class="btn btn-lg fw-bold text-white"
+              class="btn btn-lg fw-bold text-white shadow-sm"
               :class="btnClass"
-              :disabled="submitting"
+              :disabled="submitting || !qty"
               @click="submit"
             >
-              {{ submitting ? 'Menyimpan...' : 'SIMPAN DATA' }}
+              <i class="fas fa-save me-2"></i> {{ submitting ? 'Memproses...' : 'SIMPAN TRANSAKSI' }}
             </button>
           </div>
 
@@ -105,9 +112,17 @@ const qtyInput   = ref(null)
 const tipe       = computed(() => activeTrans.value?.tipe || '')
 const activeItem = computed(() => activeTrans.value?.item || null)
 
+// Selisih pintar: Hitung dari Blok jika pilih blok, jika tidak hitung dari Total Stok
 const selisih = computed(() => {
   if (tipe.value !== 'OPNAME' || !qty.value) return 0
-  return parseFloat(qty.value) - (parseFloat(activeItem.value?.stok) || 0)
+  const inputQty = parseFloat(qty.value)
+  
+  if (blokPilih.value && activeItem.value?.bloks) {
+    const stokBlok = parseFloat(activeItem.value.bloks[blokPilih.value]) || 0
+    return inputQty - stokBlok
+  } else {
+    return inputQty - (parseFloat(activeItem.value?.stok) || 0)
+  }
 })
 
 const headerClass = computed(() => ({
@@ -136,7 +151,7 @@ watch(() => activeTrans.value, val => {
   if (val) {
     qty.value        = ''
     keterangan.value = ''
-    blokPilih.value  = val.item?.lokasi || ''
+    blokPilih.value  = '' // Reset bersih pilihan blok tiap kali modal dibuka
     nextTick(() => qtyInput.value?.focus())
   }
 })
@@ -148,9 +163,10 @@ const submit = async () => {
   try {
     await kirimTransaksi(
       activeItem.value.idUnik,
-      tipe.value, q,
+      tipe.value, 
+      q,
       (keterangan.value || '-').toUpperCase(),
-      blokPilih.value || activeItem.value.lokasi || ''
+      blokPilih.value
     )
     emit('close')
   } finally {
