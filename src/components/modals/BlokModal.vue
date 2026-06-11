@@ -92,10 +92,10 @@
                           
                           <select class="form-select form-select-sm"
                                   style="max-width:110px;font-size:.72rem"
-                                  value=""
-                                  @change="assignBlok(item, $event.target.value, blok.nama); $event.target.value=''"
+                                  :value="''"
+                                  @change="assignBlok(item, $event.target.value, blok.nama)"
                                   @click.stop>
-                            <option value="">Pindah Blok...</option>
+                            <option value="" disabled>Pindah Blok...</option>
                             <option v-for="b in masterBlok" :key="b.id" :value="b.nama" :disabled="b.nama === blok.nama">
                               {{ b.nama }}
                             </option>
@@ -158,10 +158,10 @@
                           
                           <select class="form-select form-select-sm"
                                   style="max-width:110px;font-size:.72rem"
-                                  value=""
-                                  @change="assignBlok(item, $event.target.value, null); $event.target.value=''"
+                                  :value="''"
+                                  @change="assignBlok(item, $event.target.value, null)"
                                   @click.stop>
-                            <option value="">Set Blok...</option>
+                            <option value="" disabled>Set Blok...</option>
                             <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
                               {{ b.nama }}
                             </option>
@@ -254,7 +254,7 @@ const hapusBlok = async (id) => {
   await remove(dbRef(db, `master_blok/${id}`))
 }
 
-// LOGIKA PINDAH BLOK YANG BARU
+// LOGIKA PINDAH BLOK YANG BARU + OPTIMISTIC UI
 const assignBlok = async (item, targetBlok, asalBlok = null) => {
   if (!targetBlok) return
   try {
@@ -262,23 +262,29 @@ const assignBlok = async (item, targetBlok, asalBlok = null) => {
     let qtyYangDipindah = 0;
 
     if (asalBlok) {
-      // Mindahin dari Blok A ke Blok B
       qtyYangDipindah = parseFloat(item.stokBlok) || 0;
       if (qtyYangDipindah <= 0) return;
-      delete bloks[asalBlok]; // Cabut dari blok asal
+      delete bloks[asalBlok];
     } else {
-      // Set dari Tanpa Lokasi ke Blok Baru
       qtyYangDipindah = parseFloat(item.sisaTanpaBlok) || 0;
       if (qtyYangDipindah <= 0) return;
     }
 
-    // Masukin qty ke blok tujuan (ditambah kalau blok tujuan udah ada isinya)
     const targetKey = targetBlok.toUpperCase();
     bloks[targetKey] = (parseFloat(bloks[targetKey]) || 0) + qtyYangDipindah;
 
-    // Update ke Firebase
+    // === OPTIMISTIC UI UPDATE ===
+    // Memaksa Vue memindahkan item di layar seketika, sebelum Firebase selesai loading
+    const idx = dbStok.value.findIndex(x => x.idUnik === item.idUnik);
+    if (idx !== -1) {
+      dbStok.value[idx].bloks = bloks;
+      dbStok.value = [...dbStok.value]; // Trigger reactivity Vue
+    }
+    // ============================
+
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks: bloks
+      bloks: bloks,
+      tglUpdate: new Date().toISOString()
     });
 
     window.Swal.fire({
@@ -292,7 +298,6 @@ const assignBlok = async (item, targetBlok, asalBlok = null) => {
   }
 }
 
-// LOGIKA MULTI-BLOK UNTUK RENDER BLOK
 const blokData = computed(() => {
   return masterBlok.value.map(blok => {
     let items = []
@@ -322,7 +327,6 @@ const blokData = computed(() => {
   }).filter(blok => searchBlok.value ? blok.items.length > 0 : true)
 })
 
-// LOGIKA UNTUK BARANG TANPA BLOK ATAU ADA SELISIH TOTAL STOK
 const tanpaLokasi = computed(() => {
   let items = []
   
