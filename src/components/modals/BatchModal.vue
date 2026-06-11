@@ -193,7 +193,6 @@ import { masterBlok } from '../../composables/useBlok'
 const emit = defineEmits(['close'])
 const { refreshData } = useStok()
 
-// Fungsi mengambil waktu lokal format: YYYY-MM-DDTHH:mm
 const getWaktuLokal = () => {
   const tzOffset = (new Date()).getTimezoneOffset() * 60000;
   return (new Date(Date.now() - tzOffset)).toISOString().slice(0, 16);
@@ -206,7 +205,6 @@ const globalBlok     = ref('')
 const submitting     = ref(false)
 const rows           = ref([])
 
-// Auto-apply globalBlok ke semua baris
 watch(globalBlok, val => {
   if (val) rows.value.forEach(r => { r.blok = val })
 })
@@ -301,7 +299,8 @@ const pilihItem = (row, idx, item) => {
   row.kodeErp     = item.kodeErp
   row.warna       = item.warna || ''
   row.currentStok = parseFloat(item.stok) || 0
-  row.blok        = globalBlok.value || ''
+  // PERBAIKAN BUG 1: Pertahankan pilihan blok baris jika globalBlok kosong
+  row.blok        = globalBlok.value || row.blok || '' 
   activeDrop.value  = -1
   suggestions[idx]  = []
   highlightIdx[idx] = -1
@@ -368,38 +367,64 @@ const submit = async () => {
   submitting.value = true
   try {
     const updates = {}
-    const base = globalDateTime.value ? new Date(globalDateTime.value) : new Date()
+    let base = new Date(globalDateTime.value || Date.now())
+    if (isNaN(base.getTime())) base = new Date()
+
+    const pendingBloks = {}
+    const pendingStok = {}
 
     valid.forEach((row, i) => {
-      const item    = dbStok.value.find(x => x.idUnik === row.itemId)
-      const qty     = parseFloat(row.qty)
+      const item = dbStok.value.find(x => x.idUnik === row.itemId)
+      if (!item) return
+
+      const qty = parseFloat(row.qty)
       const blokNama = row.blok || ''
-      const bloks   = { ...(item.bloks || {}) }
-      const stokBlok = parseFloat(bloks[blokNama] || 0)
-
-      let stokBlokBaru
-      if (globalTipe.value === 'MASUK')       stokBlokBaru = parseFloat((stokBlok + qty).toFixed(2))
-      else if (globalTipe.value === 'KELUAR') stokBlokBaru = parseFloat((stokBlok - qty).toFixed(2))
-      else                                    stokBlokBaru = parseFloat(qty.toFixed(2))
-
-      if (blokNama) {
-        if (stokBlokBaru <= 0) delete bloks[blokNama]
-        else bloks[blokNama] = stokBlokBaru
+      
+      if (!pendingBloks[row.itemId]) {
+        pendingBloks[row.itemId] = { ...(item.bloks || {}) }
+        pendingStok[row.itemId] = parseFloat(item.stok || 0)
       }
 
-      const totalStok = parseFloat(
-        Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
-      )
+      const bloks = pendingBloks[row.itemId]
+      let currentStok = pendingStok[row.itemId]
+
+      // PERBAIKAN BUG 2: Selaraskan mutasi logika dengan DailyModal re-audit
+      if (globalTipe.value === 'MASUK') {
+        currentStok += qty
+        if (blokNama) {
+          bloks[blokNama] = parseFloat(((bloks[blokNama] || 0) + qty).toFixed(2))
+        }
+      } else if (globalTipe.value === 'KELUAR') {
+        currentStok -= qty
+        if (blokNama) {
+          bloks[blokNama] = parseFloat(((bloks[blokNama] || 0) - qty).toFixed(2))
+        }
+      } else if (globalTipe.value === 'OPNAME') {
+        currentStok = qty
+        if (blokNama) {
+          bloks[blokNama] = qty
+        }
+      }
+
+      currentStok = parseFloat(currentStok.toFixed(2))
+
+      // Bersihkan blok jika stoknya habis / di bawah nol
+      if (blokNama && bloks[blokNama] <= 0) {
+        delete bloks[blokNama]
+      }
+
+      pendingStok[row.itemId] = currentStok
 
       const iso   = new Date(base.getTime() + i * 1000).toISOString()
       const trxId = 'BCH_' + (base.getTime() + i * 1000)
 
-      updates[`stok_benang/${row.itemId}/stok`]      = totalStok
-      updates[`stok_benang/${row.itemId}/bloks`]     = bloks
+      updates[`stok_benang/${row.itemId}/stok`]      = currentStok
+      updates[`stok_benang/${row.itemId}/bloks`]     = Object.keys(bloks).length ? bloks : null
       updates[`stok_benang/${row.itemId}/tglUpdate`] = iso
+      
       updates[`riwayat_transaksi/${row.itemId}/${trxId}`] = {
         trxId, kodeErp: item.kodeErp, qty,
-        stokAkhir: totalStok, tanggal: iso,
+        stokAkhir: currentStok, tanggal: iso,
         tipe: globalTipe.value, blok: blokNama,
         keterangan: (globalKet.value || 'BULK').toUpperCase()
       }
