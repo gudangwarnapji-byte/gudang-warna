@@ -35,19 +35,25 @@
                      v-model="form.tipe" placeholder="Tipe (Otomatis)" readonly>
             </div>
           </div>
+          
           <div class="mb-2">
-            <label class="small fw-bold">LOKASI (RAK/BLOK)</label>
-            <input type="text" class="form-control text-uppercase border-warning"
-                   v-model="form.lokasi" placeholder="Misal: A-01">
+            <label class="small fw-bold">BLOK LOKASI</label>
+            <select class="form-select border-warning fw-bold" v-model="form.lokasi">
+              <option value="">-- Bebas / Tanpa Lokasi --</option>
+              <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
+                {{ b.nama }}
+              </option>
+            </select>
           </div>
+          
           <div class="row g-2">
             <div class="col-6">
-              <label class="small fw-bold">STOK AWAL</label>
+              <label class="small fw-bold">STOK AWAL (Opsional)</label>
               <input type="number" step="any" class="form-control" v-model="form.stokAwal">
             </div>
             <div class="col-6">
-              <label class="small fw-bold text-success">STOK SISTEM</label>
-              <input type="number" step="any" class="form-control border-success" v-model="form.stok">
+              <label class="small fw-bold text-success">STOK AKTIF (SISTEM)</label>
+              <input type="number" step="any" class="form-control border-success fw-bold" v-model="form.stok">
             </div>
           </div>
           <button type="button" class="btn btn-success w-100 mt-3 fw-bold shadow"
@@ -64,6 +70,7 @@
 import { ref } from 'vue'
 import { ref as dbRef, push } from 'firebase/database'
 import { db } from '../../firebase'
+import { masterBlok } from '../../composables/useBlok'
 
 const emit = defineEmits(['close'])
 const saving = ref(false)
@@ -85,17 +92,30 @@ const simpan = async () => {
     window.Swal.fire('Peringatan', 'Kode ERP dan Nama wajib diisi.', 'warning')
     return
   }
+  
   saving.value = true
   try {
+    const qtyStok = Number(form.value.stok) || 0
+    const blokTerpilih = form.value.lokasi ? form.value.lokasi.toUpperCase() : ''
+    
+    // Konversi ke format Multi-Blok baru
+    let bloksObj = null
+    if (blokTerpilih && qtyStok > 0) {
+      bloksObj = {}
+      bloksObj[blokTerpilih] = qtyStok
+    }
+
     await push(dbRef(db, 'stok_benang'), {
       ...form.value,
       kodeErp: form.value.kodeErp.toUpperCase(),
       jenis: form.value.jenis.toUpperCase(),
-      lokasi: form.value.lokasi.toUpperCase(),
+      lokasi: '', // Kosongkan lokasi jadul biar gak numpuk
+      bloks: bloksObj, // Simpan pakai format objek yang baru
       stokAwal: Number(form.value.stokAwal) || 0,
-      stok: Number(form.value.stok) || 0,
+      stok: qtyStok,
       tglUpdate: new Date().toISOString()
     })
+    
     window.Swal.fire({ icon: 'success', title: 'Tersimpan!', timer: 1500, showConfirmButton: false })
     emit('close')
   } catch(e) {
