@@ -152,45 +152,59 @@
                   </div>
 
                   <div v-if="isAdmin" class="p-2 border-top bg-light">
-                    <div v-if="assigningToBlok === blok.nama" class="d-flex gap-1 flex-wrap" @click.stop>
-                      <div style="position:relative;flex:2">
+                    
+                    <div v-if="assigningToBlok === blok.nama" class="p-2 border rounded bg-white shadow-sm" @click.stop>
+                      
+                      <div class="mb-2" style="position:relative">
                         <input
-                          class="form-control form-control-sm fw-bold"
+                          class="form-control form-control-sm border-primary fw-bold"
                           v-model="assignRawKey"
-                          placeholder="Cari item..."
+                          placeholder="🔍 Cari Kode / Nama..."
                           autocomplete="off"
                           @input="onInputAssign"
                           @blur="setTimeout(() => assignDrop = false, 150)"
                         >
-                        <div v-if="assignDrop && assignSuggestions.length"
-                             class="ac-dropdown">
+                        <div v-if="assignDrop && assignSuggestions.length" class="ac-dropdown-new">
                           <div v-for="sug in assignSuggestions" :key="sug.idUnik"
-                               class="ac-item"
-                               @mousedown.prevent="pilihAssignItem(sug)">
-                            <span class="ac-kode">{{ sug.kodeErp }}</span>
-                            <span class="ac-sep">|</span>
-                            <span class="ac-nama">{{ sug.nama }}</span>
-                            <span class="ac-stok ms-auto">{{ fmt(sug.stok) }} Kg</span>
+                               class="ac-item-new" @mousedown.prevent="pilihAssignItem(sug)">
+                            <div class="d-flex justify-content-between w-100 mb-1">
+                              <span class="fw-bold text-primary" style="font-size:.8rem">{{ sug.kodeErp }}</span>
+                              <span class="badge bg-light text-dark border">{{ fmt(sug.stok) }} Kg</span>
+                            </div>
+                            <div class="text-muted text-truncate w-100" style="font-size:.7rem">
+                              {{ sug.nama }} <span v-if="sug.warna">- {{ sug.warna }}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                      <input type="number" step="any" placeholder="Kg"
-                             class="form-control form-control-sm text-center"
-                             style="max-width:80px"
-                             v-model="assignStokVal" @click.stop>
-                      <button class="btn btn-xs btn-success"
-                              @click.stop="simpanAssignKeBlok(blok.nama)">
-                        <i class="fas fa-check" style="font-size:.65rem"></i>
-                      </button>
-                      <button class="btn btn-xs btn-secondary"
-                              @click.stop="assigningToBlok = ''">
-                        <i class="fas fa-times" style="font-size:.65rem"></i>
-                      </button>
+
+                      <div v-if="assignItemPilih" class="mb-2 px-2 py-1 bg-success text-white rounded small fw-bold text-center">
+                        <i class="fas fa-check-circle me-1"></i> Terpilih: {{ assignItemPilih.kodeErp }}
+                      </div>
+
+                      <div class="d-flex gap-2">
+                        <div class="input-group input-group-sm" style="flex: 1;">
+                          <input type="number" step="any" placeholder="Jumlah"
+                                 class="form-control text-center fw-bold border-success"
+                                 v-model="assignStokVal" @click.stop>
+                          <span class="input-group-text bg-light text-muted">Kg</span>
+                        </div>
+                        <button class="btn btn-sm btn-success fw-bold px-3 shadow-sm"
+                                @click.stop="simpanAssignKeBlok(blok.nama)">
+                          <i class="fas fa-save"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light border fw-bold px-3 shadow-sm"
+                                @click.stop="assigningToBlok = ''">
+                          <i class="fas fa-times text-danger"></i>
+                        </button>
+                      </div>
+
                     </div>
+
                     <button v-else
-                            class="btn btn-xs btn-outline-primary w-100"
+                            class="btn btn-sm btn-outline-primary w-100 fw-bold border-dashed"
                             @click.stop="bukaAssignKeBlok(blok.nama)">
-                      <i class="fas fa-plus me-1" style="font-size:.65rem"></i> Tambah Item ke Blok
+                      <i class="fas fa-plus me-1"></i> Tambah Item ke {{ blok.nama }}
                     </button>
                   </div>
 
@@ -403,7 +417,6 @@ const grandTotal = computed(() =>
   dbStok.value.reduce((s, i) => s + (parseFloat(i.stok) || 0), 0)
 )
 
-
 // ── EDIT KG PER BLOK (PERBAIKAN LOGIKA) ──
 const bukaEditStok = (item, blokNama) => {
   editingItem.value = item.idUnik + blokNama
@@ -417,12 +430,11 @@ const simpanStokBlok = async (item, blokNama) => {
   try {
     const bloks = { ...(item.bloks || {}) }
     const stokLamaDiBlok = parseFloat(bloks[blokNama] || 0)
-    const selisih = stokBaru - stokLamaDiBlok // Hitung selisihnya
+    const selisih = stokBaru - stokLamaDiBlok 
 
     if (stokBaru <= 0) delete bloks[blokNama]
     else bloks[blokNama] = parseFloat(stokBaru.toFixed(2))
 
-    // Total stok WAJIB dikalkulasi menggunakan selisih agar "Tanpa Lokasi" tidak hilang
     const totalStokBaru = (parseFloat(item.stok) || 0) + selisih
 
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
@@ -436,7 +448,6 @@ const simpanStokBlok = async (item, blokNama) => {
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-
 // ── PINDAH BLOK (PERBAIKAN LOGIKA) ──
 const pindahBlok = async (item, blokAsal, blokTujuan) => {
   if (!blokTujuan) return
@@ -448,7 +459,6 @@ const pindahBlok = async (item, blokAsal, blokTujuan) => {
     bloks[blokTujuan] = parseFloat(((bloks[blokTujuan] || 0) + stokPindah).toFixed(2))
     delete bloks[blokAsal]
 
-    // JANGAN UPDATE TOTAL STOK! Total stok tidak berubah karena hanya pindah rak.
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
       bloks,
       lokasi: Object.keys(bloks)[0] || ''
@@ -460,7 +470,6 @@ const pindahBlok = async (item, blokAsal, blokTujuan) => {
     })
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
-
 
 // ── HAPUS DARI BLOK (PERBAIKAN LOGIKA) ──
 const hapusDariBlok = async (item, blokNama) => {
@@ -475,14 +484,12 @@ const hapusDariBlok = async (item, blokNama) => {
     const bloks = { ...(item.bloks || {}) }
     delete bloks[blokNama]
 
-    // JANGAN UPDATE TOTAL STOK! Biarkan otomatis masuk ke Tanpa Lokasi.
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
       bloks: Object.keys(bloks).length ? bloks : null, 
       lokasi: Object.keys(bloks)[0] || ''
     })
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
-
 
 // ── TAMBAH ITEM KE BLOK (dari dalam blok) ──
 const bukaAssignKeBlok = (blokNama) => {
@@ -523,11 +530,10 @@ const simpanAssignKeBlok = async (blokNama) => {
     const bloks = { ...(item.bloks || {}) }
     bloks[blokNama] = parseFloat(((bloks[blokNama] || 0) + stokBaru).toFixed(2))
     
-    // Cek apakah barang yang di-assign melebihi total stok yang ada
     const diBlokSekarang = Object.values(bloks).reduce((s,v) => s + parseFloat(v), 0)
     let totalStok = parseFloat(item.stok) || 0
     if (diBlokSekarang > totalStok) {
-      totalStok = diBlokSekarang // Jika lebih, naikkan total stok otomatis (menganggap masuk barang baru)
+      totalStok = diBlokSekarang 
     }
 
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
@@ -547,12 +553,11 @@ const simpanAssignKeBlok = async (blokNama) => {
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-
 // ── ASSIGN DARI TANPA LOKASI (PERBAIKAN LOGIKA) ──
 const bukaAssignTanpaLok = (item) => {
   assigningItem.value      = item.idUnik
   assignBlokNama.value     = ''
-  assignStokTanpaLok.value = item.sisaTanpaBlok // Ambil dari sisa, bukan total
+  assignStokTanpaLok.value = item.sisaTanpaBlok 
 }
 
 const simpanAssignTanpaLok = async (item) => {
@@ -570,7 +575,6 @@ const simpanAssignTanpaLok = async (item) => {
       ((bloks[assignBlokNama.value] || 0) + stokMasuk).toFixed(2)
     )
 
-    // Cek apakah barang yang di-assign melebihi total stok
     const diBlokSekarang = Object.values(bloks).reduce((s,v) => s + parseFloat(v), 0)
     let totalStok = parseFloat(item.stok) || 0
     if (diBlokSekarang > totalStok) {
@@ -645,21 +649,22 @@ onMounted(() => loadMasterBlok())
   border-top: 2px solid #dee2e6; font-size: .85rem;
 }
 .btn-xs { padding: 2px 6px; font-size: .7rem; border-radius: 4px; }
-.ac-dropdown {
-  position: absolute; top: 100%; left: 0; right: 0;
-  background: #fff; border: 1.5px solid #0d6efd;
-  border-top: none; border-radius: 0 0 8px 8px;
-  z-index: 9999; max-height: 180px; overflow-y: auto;
-  box-shadow: 0 6px 16px rgba(0,0,0,.12);
+
+/* CSS Tambahan untuk Autocomplete Baru */
+.ac-dropdown-new {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: #fff; border: 1px solid #ced4da;
+  border-radius: 6px; z-index: 1050;
+  max-height: 180px; overflow-y: auto;
+  box-shadow: 0 8px 16px rgba(0,0,0,.15);
 }
-.ac-item {
-  padding: 6px 10px; cursor: pointer; font-size: .8rem;
-  border-bottom: 1px solid #f0f0f0; display: flex;
-  align-items: center; gap: 5px;
+.ac-item-new {
+  padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0;
+  display: flex; flex-direction: column; align-items: flex-start;
+  transition: background .15s;
 }
-.ac-item:hover { background: #e7f1ff; }
-.ac-kode  { font-weight: 700; color: #1e3c72; min-width: 100px; font-family: monospace; }
-.ac-nama  { color: #333; flex: 1; font-size: .75rem; }
-.ac-sep   { color: #aaa; }
-.ac-stok  { font-weight: 700; color: #198754; font-size: .75rem; white-space: nowrap; }
+.ac-item-new:last-child { border-bottom: none; }
+.ac-item-new:hover { background-color: #f0f8ff; }
+.border-dashed { border-width: 2px !important; border-style: dashed !important; opacity: 0.8; }
+.border-dashed:hover { opacity: 1; }
 </style>
