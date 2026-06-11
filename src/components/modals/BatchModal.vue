@@ -71,7 +71,7 @@
                       <th style="width:14%">BLOK</th>
                       <th style="width:13%">QTY (KG)</th>
                       <th style="width:20%">PREVIEW SALDO</th>
-                      <th style="width:5%">X</th>
+                      <th style="width:5%"> </th>
                     </tr>
                   </thead>
                   <tbody>
