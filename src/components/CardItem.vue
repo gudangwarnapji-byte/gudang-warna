@@ -39,11 +39,13 @@
         </div>
       </div>
 
-      <div class="stok-row mb-3" :class="isCritical ? 'stok-kritis' : ''">
-        <span class="stok-row-lbl">Total Stok Saat Ini</span>
-        <span class="stok-row-val" :class="isCritical ? 'text-danger' : 'text-safe'">
-          {{ fmt(item.stok) }} Kg
-        </span>
+      <div class="stok-box mb-3" :class="isCritical ? 'stok-kritis' : 'stok-aman'">
+        <div class="stok-lbl">
+          <i class="fas fa-cubes me-1"></i> TOTAL STOK
+        </div>
+        <div class="stok-val">
+          {{ fmt(item.stok) }} <span class="stok-unit">Kg</span>
+        </div>
       </div>
 
       <div v-if="role === 'admin'" class="d-flex gap-1">
@@ -155,14 +157,28 @@ const sisaTanpaBlok = computed(() => {
   background: #f8f9fa; color: #6c757d;
   border: 1px dashed #dee2e6;
 }
-.stok-row {
-  display: flex; align-items: center;
-  justify-content: space-between;
-  background: #f8f9fa; border-radius: 8px;
-  padding: 8px 12px; border: 1px solid #e9ecef;
+
+/* CSS STOK BOX DESAIN BARU */
+.stok-box {
+  display: flex; align-items: center; justify-content: space-between;
+  border-radius: 8px; padding: 10px 14px;
+  border: 1px solid #e9ecef;
 }
-.stok-row.stok-kritis { background: #fff5f5; border-color: #f7c1c1; }
-.stok-row-lbl { font-size: .72rem; color: #6c757d; text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
-.stok-row-val { font-size: 1rem; font-weight: 700; }
+.stok-box.stok-aman {
+  background: #f4fdf8; border-left: 5px solid #198754;
+}
+.stok-box.stok-kritis {
+  background: #fff5f5; border-left: 5px solid #dc3545; border-color: #f7c1c1;
+}
+.stok-lbl { 
+  font-size: .75rem; color: #6c757d; font-weight: 700; letter-spacing: .5px;
+}
+.stok-val { 
+  font-size: 1.5rem; font-weight: 800; letter-spacing: -.5px; color: #212529;
+}
+.stok-unit {
+  font-size: .85rem; font-weight: 600; color: #6c757d; margin-left: 2px;
+}
+.stok-kritis .stok-val { color: #dc3545; }
 .text-safe { color: #198754; }
 </style>
