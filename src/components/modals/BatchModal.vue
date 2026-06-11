@@ -3,17 +3,14 @@
     <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content border-0 shadow">
 
-        <!-- HEADER -->
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title fw-bold">Input Massal (Smart Paste)</h5>
           <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
         </div>
 
-        <!-- BODY -->
         <div class="modal-body p-3">
           <div class="row g-3">
 
-            <!-- PASTE AREA -->
             <div class="col-12">
               <label class="small fw-bold text-primary mb-1">1. COPY DATA DARI EXCEL (Tanpa Header)</label>
               <textarea
@@ -26,29 +23,34 @@
               <div class="form-text small text-muted">Paste data 2 Kolom (Item &amp; Qty).</div>
             </div>
 
-            <!-- SETTINGS -->
-            <div class="col-12 border-top pt-2">
-              <label class="small fw-bold text-dark mb-1">2. PENGATURAN UMUM</label>
-              <div class="row g-2">
-                <div class="col-md-3">
-                  <select class="form-select fw-bold border-primary" v-model="globalTipe">
+            <div class="col-12 border-top pt-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="small fw-bold text-dark m-0">2. PENGATURAN UMUM</label>
+                <button class="btn btn-sm btn-warning fw-bold text-dark shadow-sm" @click="addEmptyRow">
+                  <i class="fas fa-plus me-1"></i> Baris Manual
+                </button>
+              </div>
+              
+              <div class="row g-3">
+                <div class="col-md-2 col-6">
+                  <select class="form-select form-select-sm fw-bold border-primary" v-model="globalTipe">
                     <option value="MASUK">IN (Masuk)</option>
                     <option value="KELUAR">OUT (Keluar)</option>
                     <option value="OPNAME">ADJ (Opname)</option>
                   </select>
                 </div>
-                <div class="col-md-3">
-                  <div class="d-flex gap-1">
-                    <input type="date" class="form-control" v-model="globalDatePart" style="flex:2">
-                    <input type="time" class="form-control" v-model="globalTimePart" style="flex:1">
-                  </div>
+                <div class="col-md-2 col-6">
+                  <input type="date" class="form-control form-control-sm" v-model="globalDatePart">
                 </div>
-                <div class="col-md-3">
-                  <input type="text" class="form-control text-uppercase"
-                         v-model="globalKet" placeholder="Keterangan Umum">
+                <div class="col-md-2 col-4">
+                  <input type="time" class="form-control form-control-sm" v-model="globalTimePart">
                 </div>
-                <div class="col-md-3">
-                  <select class="form-select fw-bold border-success" v-model="globalBlok">
+                <div class="col-md-3 col-8">
+                  <input type="text" class="form-control form-control-sm text-uppercase"
+                         v-model="globalKet" placeholder="KETERANGAN UMUM">
+                </div>
+                <div class="col-md-3 col-12">
+                  <select class="form-select form-select-sm fw-bold border-success" v-model="globalBlok">
                     <option value="">-- Blok (Semua) --</option>
                     <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
                       {{ b.nama }}
@@ -56,15 +58,9 @@
                   </select>
                 </div>
               </div>
-              <div class="mt-2">
-                <button class="btn btn-warning fw-bold" @click="addEmptyRow">
-                  + Baris Manual
-                </button>
-              </div>
             </div>
 
-            <!-- TABLE -->
-            <div class="col-12">
+            <div class="col-12 mt-4">
               <div class="table-responsive" style="max-height:400px;border:1px solid #eee;border-radius:8px">
                 <table class="table table-sm table-bordered align-middle mb-0">
                   <thead class="table-light sticky-top text-center">
@@ -83,7 +79,6 @@
                         :class="row.itemId ? '' : 'table-warning'">
                       <td class="text-center fw-bold text-muted">{{ idx + 1 }}</td>
 
-                      <!-- INPUT + DROPDOWN -->
                       <td style="position:relative">
                         <input
                           class="form-control form-control-sm fw-bold"
@@ -98,7 +93,6 @@
                           @keydown.enter.prevent="pilihSuggestion(idx)"
                           @keydown.escape="activeDrop = -1"
                         >
-                        <!-- DROPDOWN -->
                         <div v-if="activeDrop === idx && suggestions[idx]?.length"
                              class="ac-dropdown">
                           <div
@@ -115,7 +109,6 @@
                             <span class="ac-stok ms-auto">{{ fmt(sug.stok) }} Kg</span>
                           </div>
                         </div>
-                        <!-- STATUS -->
                         <div class="small mt-1"
                              :class="row.itemId ? 'text-success' : 'text-danger'">
                           <i :class="row.itemId ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
@@ -123,10 +116,8 @@
                         </div>
                       </td>
 
-                      <!-- WARNA -->
                       <td class="text-center small text-muted fw-bold">{{ row.warna || '-' }}</td>
 
-                      <!-- BLOK PER BARIS -->
                       <td>
                         <select class="form-select form-select-sm fw-bold"
                                 v-model="row.blok">
@@ -145,14 +136,12 @@
                         </select>
                       </td>
 
-                      <!-- QTY -->
                       <td>
                         <input type="number" step="any"
                                class="form-control form-control-sm text-center fw-bold border-primary"
                                v-model="row.qty">
                       </td>
 
-                      <!-- PREVIEW -->
                       <td class="text-center small">
                         <span v-if="row.itemId && row.qty && row.blok">
                           <span class="text-muted">{{ fmt(getStokBlok(row.itemId, row.blok)) }}</span>
@@ -162,7 +151,6 @@
                         <span v-else class="text-muted">-</span>
                       </td>
 
-                      <!-- HAPUS -->
                       <td class="text-center">
                         <button class="btn btn-sm text-danger"
                                 @click="rows.splice(idx, 1)">
@@ -182,7 +170,6 @@
           </div>
         </div>
 
-        <!-- FOOTER -->
         <div class="modal-footer bg-light">
           <button class="btn btn-lg btn-success fw-bold w-100 shadow"
                   :disabled="!validCount || submitting"
@@ -394,7 +381,7 @@ const submit = async () => {
       let stokBlokBaru
       if (globalTipe.value === 'MASUK')       stokBlokBaru = parseFloat((stokBlok + qty).toFixed(2))
       else if (globalTipe.value === 'KELUAR') stokBlokBaru = parseFloat((stokBlok - qty).toFixed(2))
-      else                                     stokBlokBaru = parseFloat(qty.toFixed(2))
+      else                                    stokBlokBaru = parseFloat(qty.toFixed(2))
 
       if (blokNama) {
         if (stokBlokBaru <= 0) delete bloks[blokNama]
