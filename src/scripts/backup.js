@@ -1,7 +1,12 @@
-// File: scripts/backup.js
-const admin = require('firebase-admin');
-const fs = require('fs');
-const path = require('path');
+// File: src/scripts/backup.js
+import admin from 'firebase-admin';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Trik membuat __dirname di ES Module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 1. Ambil Kunci Rahasia dari Environment GitHub
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -22,7 +27,9 @@ async function jalankanBackup() {
     
     // 3. Siapkan nama file berdasarkan tanggal
     const dateStr = new Date().toISOString().slice(0, 10); // Format: YYYY-MM-DD
-    const dir = path.join(__dirname, '../database-backups');
+    
+    // Mundur 2 folder dari src/scripts menuju root directory project
+    const dir = path.join(__dirname, '../../database-backups');
     
     // 4. Buat folder jika belum ada
     if (!fs.existsSync(dir)){
