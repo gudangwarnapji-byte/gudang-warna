@@ -20,7 +20,7 @@
         <template v-if="isAdmin">
           <button class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm flex-shrink-0"
                   @click="bukaAddModal">
-            <i class="fas fa-plus-circle me-1"></i> Barang
+            <i class="fas fa-plus-circle me-1"></i> Item
           </button>
           <button class="btn btn-sm btn-primary fw-bold shadow-sm flex-shrink-0"
                   style="border-radius:8px" @click="bukaBatch" title="Input Massal Excel">
