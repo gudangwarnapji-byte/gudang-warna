@@ -141,20 +141,48 @@ const jalankanAudit = async () => {
     const masters   = snapM.val() || {}
     const histories = snapH.val() || {}
     const updates   = {}
+
     Object.keys(masters).forEach(id => {
       let run = Number(masters[id].stokAwal) || 0
+
+      // Kumpulkan pergerakan per blok
+      const blokChanges = {}
+
       Object.values(histories[id] || {})
         .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
         .forEach(log => {
-          const q = Number(log.qty)
-          if (log.tipe === 'MASUK')       run += q
-          else if (log.tipe === 'KELUAR') run -= q
-          else if (log.tipe === 'OPNAME') run  = q
+          const q    = Number(log.qty)
+          const blok = log.blok || ''
+
+          if (log.tipe === 'MASUK') {
+            run += q
+            if (blok) blokChanges[blok] = parseFloat(((blokChanges[blok] || 0) + q).toFixed(2))
+          } else if (log.tipe === 'KELUAR') {
+            run -= q
+            if (blok) blokChanges[blok] = parseFloat(((blokChanges[blok] || 0) - q).toFixed(2))
+          } else if (log.tipe === 'OPNAME') {
+            run = q
+            if (blok) blokChanges[blok] = q
+          }
+
           run = parseFloat(run.toFixed(2))
           updates[`riwayat_transaksi/${id}/${log.trxId}/stokAkhir`] = run
         })
+
       updates[`stok_benang/${id}/stok`] = run
+
+      // Update bloks — gabungkan dengan bloks yang sudah ada
+      const bloksLama = masters[id].bloks || {}
+      const bloksBaru = { ...bloksLama }
+
+      Object.keys(blokChanges).forEach(blok => {
+        bloksBaru[blok] = parseFloat(((bloksBaru[blok] || 0) + blokChanges[blok]).toFixed(2))
+        if (bloksBaru[blok] <= 0) delete bloksBaru[blok]
+      })
+
+      updates[`stok_benang/${id}/bloks`] = bloksBaru
     })
+
     if (Object.keys(updates).length) {
       await update(dbRef(db), updates)
       window.Swal.fire('Selesai!', `Audit ${Object.keys(masters).length} barang berhasil.`, 'success')
