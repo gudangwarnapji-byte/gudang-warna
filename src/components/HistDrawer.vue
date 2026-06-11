@@ -1,50 +1,43 @@
 <template>
   <div>
-    <!-- OVERLAY -->
     <div
       class="hist-overlay"
       @click="$emit('close')"
     ></div>
 
-    <!-- DRAWER -->
     <div class="hist-drawer">
-      <!-- DRAG HANDLE -->
       <div class="drag-handle">
         <div class="handle-bar"></div>
       </div>
 
-<!-- HEADER -->
-<div class="px-3 pb-2 border-bottom flex-shrink-0">
-  <div class="d-flex justify-content-between align-items-start">
+      <div class="px-3 pb-2 border-bottom flex-shrink-0">
+        <div class="d-flex justify-content-between align-items-start">
 
-    <!-- Kiri: nama + kode + stok badge -->
-    <div style="min-width:0;flex:1;margin-right:10px">
-      <h6 class="fw-bold mb-0 text-truncate" style="font-size:1rem">
-        {{ activeItem?.nama || 'Riwayat' }}
-      </h6>
-      <div class="d-flex align-items-center gap-2 mt-1">
-        <small class="text-muted" style="font-size:.75rem">
-          {{ activeItem?.kodeErp }}
-        </small>
-        <span class="hist-stok-badge">
-          Stok: {{ fmt(activeItem?.stok) }} Kg
-        </span>
+          <div style="min-width:0;flex:1;margin-right:10px">
+            <h6 class="fw-bold mb-0 text-truncate" style="font-size:1rem">
+              {{ activeItem?.nama || 'Riwayat' }}
+            </h6>
+            <div class="d-flex align-items-center gap-2 mt-1">
+              <small class="text-muted" style="font-size:.75rem">
+                {{ activeItem?.kodeErp }}
+              </small>
+              <span class="hist-stok-badge">
+                Stok: {{ fmt(activeItem?.stok) }} Kg
+              </span>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 align-items-center flex-shrink-0">
+            <button class="btn btn-sm btn-outline-success rounded-pill px-3"
+                    @click="exportKartuStok">
+              <i class="fas fa-file-excel"></i>
+            </button>
+            <button class="btn-close" @click="$emit('close')"></button>
+          </div>
+
+        </div>
       </div>
-    </div>
 
-    <!-- Kanan: tombol export + close -->
-    <div class="d-flex gap-2 align-items-center flex-shrink-0">
-      <button class="btn btn-sm btn-outline-success rounded-pill px-3"
-              @click="exportKartuStok">
-        <i class="fas fa-file-excel"></i>
-      </button>
-      <button class="btn-close" @click="$emit('close')"></button>
-    </div>
-
-  </div>
-</div>
-
-      <!-- MONTH CHIPS -->
       <div class="chips-wrap">
         <span
           v-for="m in months"
@@ -57,7 +50,6 @@
         </span>
       </div>
 
-      <!-- SUMMARY -->
       <div class="hist-summary" v-if="activeMonth">
         <div class="hist-sum-box">
           <div class="hist-sum-lbl">Masuk</div>
@@ -73,7 +65,6 @@
         </div>
       </div>
 
-      <!-- LIST -->
       <div class="hist-list">
         <div v-if="loadingHist" class="text-center py-5">
           <div class="spinner-border text-primary"></div>
@@ -95,7 +86,14 @@
                     <i :class="r.tipe === 'MASUK' ? 'fas fa-arrow-down text-success' : r.tipe === 'KELUAR' ? 'fas fa-arrow-up text-danger' : 'fas fa-check-circle text-warning'"></i>
                     {{ r.keterangan || '-' }}
                   </div>
-                  <small class="text-muted" style="font-size:.7rem">{{ r.tipe }}</small>
+                  <div class="d-flex align-items-center gap-2 mt-1">
+                    <span class="badge" :class="r.tipe === 'MASUK' ? 'bg-success' : r.tipe === 'KELUAR' ? 'bg-danger' : 'bg-warning text-dark'" style="font-size:.65rem">
+                      {{ r.tipe }}
+                    </span>
+                    <span v-if="r.blok" class="badge bg-secondary text-white" style="font-size:.65rem">
+                      <i class="fas fa-warehouse me-1"></i> {{ r.blok }}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div class="text-end" style="width:40%">
@@ -104,15 +102,15 @@
                   <span style="font-size:.7rem;color:#999">Kg</span>
                 </div>
                 <div class="history-bal">
-  Sisa: {{ fmt(r.calculatedBal) }}
-  <button
-    v-if="currentRole === 'admin'"
-    class="btn btn-sm btn-link text-muted p-0 ms-2"
-    @click="bukaEdit(r, activeHistId)"
-  >
-    <i class="fas fa-pencil-alt"></i>
-  </button>
-</div>
+                  Sisa Total: {{ fmt(r.calculatedBal) }}
+                  <button
+                    v-if="currentRole === 'admin'"
+                    class="btn btn-sm btn-link text-muted p-0 ms-2"
+                    @click="bukaEdit(r, activeHistId)"
+                  >
+                    <i class="fas fa-pencil-alt"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -126,7 +124,6 @@
 </template>
 
 <script setup>
-
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { ref as dbRef, onValue } from 'firebase/database'
 import { db } from '../firebase'
@@ -181,6 +178,8 @@ const formatDate = iso => new Date(iso).toLocaleDateString('id-ID', {
 const formatTime = iso => new Date(iso).toLocaleTimeString('id-ID', {
   hour: '2-digit', minute: '2-digit'
 })
+
+// EXPORT KARTU STOK EXCEL (Sudah ada kolom Blok)
 const exportKartuStok = () => {
   if (!activeHistId.value) return
   const item = dbStok.value.find(x => x.idUnik === activeHistId.value)
@@ -196,20 +195,21 @@ const exportKartuStok = () => {
   }
 
   const rows = [
-    ['KARTU STOK'],
+    ['KARTU STOK GUDANG'],
     ['Nama / Lot', `: ${item.nama}`],
     ['Kode ERP',   `: ${item.kodeErp}`],
     ['Warna',      `: ${item.warna || '-'}`],
     ['Jenis',      `: ${item.jenis || '-'}`],
     ['Grade',      `: ${item.grade || '-'}`],
     [],
-    ['TANGGAL', 'JAM', 'TIPE', 'KETERANGAN', 'QTY (KG)', 'SALDO (KG)'],
+    ['TANGGAL', 'JAM', 'TIPE', 'BLOK LOKASI', 'KETERANGAN', 'QTY (KG)', 'SALDO TOTAL (KG)'],
     ...allRows.map(r => {
       const d = new Date(r.tanggal)
       return [
         d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
         d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         r.tipe,
+        (r.blok || '-').toUpperCase(), // Menambahkan blok di laporan Excel
         (r.keterangan || '-').toUpperCase(),
         parseFloat(r.qty) || 0,
         parseFloat(r.calculatedBal) || 0
@@ -218,15 +218,15 @@ const exportKartuStok = () => {
   ]
 
   const ws = window.XLSX.utils.aoa_to_sheet(rows)
-  ws['!cols'] = [{ wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 25 }, { wch: 12 }, { wch: 12 }]
+  ws['!cols'] = [{ wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 30 }, { wch: 12 }, { wch: 16 }]
   const wb = window.XLSX.utils.book_new()
   window.XLSX.utils.book_append_sheet(wb, ws, 'Kartu_Stok')
   window.XLSX.writeFile(wb, `KartuStok_${item.kodeErp}_${item.nama}.xlsx`.replace(/[\/\\:*?"<>|]/g, '_'))
 }
+
 const loadHistoryData = (id) => {
   if (!id) return
   
-  // Unsubscribe dari listener lama jika ada
   if (unsubscribe) {
     unsubscribe()
     unsubscribe = null
@@ -238,7 +238,6 @@ const loadHistoryData = (id) => {
   
   const item = dbStok.value.find(x => x.idUnik === id)
   
-  // Gunakan real-time listener (tanpa onlyOnce) agar auto-update
   unsubscribe = onValue(dbRef(db, `riwayat_transaksi/${id}`), snap => {
     loadingHist.value = false
     const data = snap.val()
@@ -266,11 +265,9 @@ const loadHistoryData = (id) => {
 }
 
 watch(activeHistId, id => {
-  console.log('activeHistId berubah:', id)
   loadHistoryData(id)
 })
 
-// Cleanup listener saat drawer ditutup
 onUnmounted(() => {
   if (unsubscribe) {
     unsubscribe()
