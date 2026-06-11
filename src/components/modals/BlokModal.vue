@@ -3,6 +3,7 @@
     <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content border-0 shadow">
 
+        <!-- HEADER -->
         <div class="modal-header text-white" style="background:linear-gradient(135deg,#1e3c72,#2a5298)">
           <div class="w-100">
             <div class="d-flex justify-content-between align-items-center">
@@ -20,6 +21,7 @@
           </div>
         </div>
 
+        <!-- KELOLA BLOK -->
         <div v-if="showKelolaBlok && isAdmin" class="border-bottom p-3 bg-light">
           <div class="d-flex gap-2 align-items-center flex-wrap">
             <input type="text" class="form-control form-control-sm text-uppercase fw-bold"
@@ -39,6 +41,7 @@
           </div>
         </div>
 
+        <!-- SEARCH -->
         <div class="px-3 py-2 border-bottom bg-white">
           <div class="input-group input-group-sm shadow-sm">
             <span class="input-group-text bg-white border-0">
@@ -54,11 +57,14 @@
           </div>
         </div>
 
+        <!-- BODY -->
         <div class="modal-body p-3" style="max-height:70vh;overflow-y:auto">
           <div class="row g-3">
 
+            <!-- PER BLOK -->
             <div v-for="blok in blokData" :key="blok.nama" class="col-12 col-md-6 col-lg-4">
-              <div class="blok-card shadow-sm" :class="activeBlok === blok.nama ? 'blok-active' : ''"
+              <div class="blok-card shadow-sm"
+                   :class="activeBlok === blok.nama ? 'blok-active' : ''"
                    @click="toggleBlok(blok.nama)">
                 <div class="blok-header">
                   <div class="d-flex justify-content-between align-items-center">
@@ -83,24 +89,51 @@
                         <div class="text-muted" style="font-size:.7rem">{{ item.kodeErp }}</div>
                       </div>
                       <div class="text-end ms-2">
-                        <div class="fw-bold"
-                             :class="(item.stokBlok||0) < 5 ? 'text-danger' : 'text-success'"
-                             style="font-size:.9rem">
-                          {{ fmt(item.stokBlok) }} Kg
+                        <!-- EDIT KG MODE -->
+                        <div v-if="isAdmin && editingItem === item.idUnik + blok.nama"
+                             class="d-flex gap-1 align-items-center" @click.stop>
+                          <input
+                            type="number" step="any"
+                            class="form-control form-control-sm text-center fw-bold"
+                            style="width:90px"
+                            v-model="editStokVal"
+                            @keydown.enter="simpanStokBlok(item, blok.nama)"
+                            @keydown.escape="editingItem = ''"
+                          >
+                          <button class="btn btn-xs btn-success"
+                                  @click.stop="simpanStokBlok(item, blok.nama)">
+                            <i class="fas fa-check" style="font-size:.65rem"></i>
+                          </button>
+                          <button class="btn btn-xs btn-secondary"
+                                  @click.stop="editingItem = ''">
+                            <i class="fas fa-times" style="font-size:.65rem"></i>
+                          </button>
                         </div>
+                        <!-- TAMPIL KG -->
+                        <div v-else
+                             class="fw-bold"
+                             :class="item.stokDiBlok < 5 ? 'text-danger' : 'text-success'"
+                             style="font-size:.9rem">
+                          {{ fmt(item.stokDiBlok) }} Kg
+                          <i v-if="isAdmin"
+                             class="fas fa-pencil-alt ms-1"
+                             style="font-size:.6rem;opacity:.5;cursor:pointer"
+                             @click.stop="bukaEditStok(item, blok.nama)"></i>
+                        </div>
+
+                        <!-- AKSI -->
                         <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end flex-wrap">
-                          
                           <select class="form-select form-select-sm"
-                                  style="max-width:110px;font-size:.72rem"
-                                  :value="''"
-                                  @change="assignBlok(item, $event.target.value, blok.nama)"
+                                  style="max-width:100px;font-size:.7rem"
+                                  value=""
+                                  @change="pindahBlok(item, blok.nama, $event.target.value)"
                                   @click.stop>
-                            <option value="" disabled>Pindah Blok...</option>
-                            <option v-for="b in masterBlok" :key="b.id" :value="b.nama" :disabled="b.nama === blok.nama">
+                            <option value="">Pindah...</option>
+                            <option v-for="b in masterBlok.filter(b => b.nama !== blok.nama)"
+                                    :key="b.id" :value="b.nama">
                               {{ b.nama }}
                             </option>
                           </select>
-                          
                           <button class="btn btn-xs btn-outline-success"
                                   @click.stop="quickTrans('MASUK', item)">
                             <i class="fas fa-arrow-down" style="font-size:.65rem"></i>
@@ -113,10 +146,60 @@
                                   @click.stop="quickRiwayat(item)">
                             <i class="fas fa-history" style="font-size:.65rem"></i>
                           </button>
+                          <button class="btn btn-xs btn-outline-danger"
+                                  title="Hapus dari blok ini"
+                                  @click.stop="hapusDariBlok(item, blok.nama)">
+                            <i class="fas fa-trash-alt" style="font-size:.65rem"></i>
+                          </button>
                         </div>
                       </div>
                     </div>
                   </div>
+
+                  <!-- TAMBAH ITEM KE BLOK -->
+                  <div v-if="isAdmin" class="p-2 border-top bg-light">
+                    <div v-if="assigningToBlok === blok.nama" class="d-flex gap-1 flex-wrap" @click.stop>
+                      <div style="position:relative;flex:2">
+                        <input
+                          class="form-control form-control-sm fw-bold"
+                          v-model="assignRawKey"
+                          placeholder="Cari item..."
+                          autocomplete="off"
+                          @input="onInputAssign"
+                          @blur="setTimeout(() => assignDrop = false, 150)"
+                        >
+                        <div v-if="assignDrop && assignSuggestions.length"
+                             class="ac-dropdown">
+                          <div v-for="sug in assignSuggestions" :key="sug.idUnik"
+                               class="ac-item"
+                               @mousedown.prevent="pilihAssignItem(sug)">
+                            <span class="ac-kode">{{ sug.kodeErp }}</span>
+                            <span class="ac-sep">|</span>
+                            <span class="ac-nama">{{ sug.nama }}</span>
+                            <span class="ac-stok ms-auto">{{ fmt(sug.stok) }} Kg</span>
+                          </div>
+                        </div>
+                      </div>
+                      <input type="number" step="any" placeholder="Kg"
+                             class="form-control form-control-sm text-center"
+                             style="max-width:80px"
+                             v-model="assignStokVal" @click.stop>
+                      <button class="btn btn-xs btn-success"
+                              @click.stop="simpanAssignKeBlok(blok.nama)">
+                        <i class="fas fa-check" style="font-size:.65rem"></i>
+                      </button>
+                      <button class="btn btn-xs btn-secondary"
+                              @click.stop="assigningToBlok = ''">
+                        <i class="fas fa-times" style="font-size:.65rem"></i>
+                      </button>
+                    </div>
+                    <button v-else
+                            class="btn btn-xs btn-outline-primary w-100"
+                            @click.stop="bukaAssignKeBlok(blok.nama)">
+                      <i class="fas fa-plus me-1" style="font-size:.65rem"></i> Tambah Item ke Blok
+                    </button>
+                  </div>
+
                   <div class="blok-total">
                     <span class="text-muted">Total {{ blok.nama }}</span>
                     <span class="fw-bold text-primary">{{ fmt(blok.totalStok) }} Kg</span>
@@ -125,6 +208,7 @@
               </div>
             </div>
 
+            <!-- TANPA LOKASI -->
             <div class="col-12 col-md-6 col-lg-4" v-if="tanpaLokasi.length">
               <div class="blok-card shadow-sm border-warning"
                    :class="activeBlok === '__TANPALOKASI__' ? 'blok-active' : ''"
@@ -137,7 +221,7 @@
                     <span class="badge bg-warning text-dark fw-bold">{{ tanpaLokasi.length }} Item</span>
                   </div>
                   <div class="mt-2 fw-bold text-warning" style="font-size:1.1rem">
-                    {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.sisaTanpaBlok)||0), 0)) }} Kg
+                    {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.stok)||0), 0)) }} Kg
                   </div>
                 </div>
                 <div v-if="activeBlok === '__TANPALOKASI__'" class="blok-items">
@@ -149,36 +233,44 @@
                         <div class="text-muted" style="font-size:.7rem">{{ item.kodeErp }}</div>
                       </div>
                       <div class="text-end ms-2">
-                        <div class="fw-bold"
-                             :class="(item.sisaTanpaBlok||0) < 5 ? 'text-danger' : 'text-success'"
-                             style="font-size:.9rem">
-                          {{ fmt(item.sisaTanpaBlok) }} Kg
+                        <div class="fw-bold text-success" style="font-size:.9rem">
+                          {{ fmt(item.stok) }} Kg
                         </div>
-                        <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end flex-wrap">
-                          
-                          <select class="form-select form-select-sm"
-                                  style="max-width:110px;font-size:.72rem"
-                                  :value="''"
-                                  @change="assignBlok(item, $event.target.value, null)"
-                                  @click.stop>
-                            <option value="" disabled>Set Blok...</option>
-                            <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
-                              {{ b.nama }}
-                            </option>
-                          </select>
-                          
-                          <button class="btn btn-xs btn-outline-success"
-                                  @click.stop="quickTrans('MASUK', item)">
-                            <i class="fas fa-arrow-down" style="font-size:.65rem"></i>
-                          </button>
-                          <button class="btn btn-xs btn-outline-danger"
-                                  @click.stop="quickTrans('KELUAR', item)">
-                            <i class="fas fa-arrow-up" style="font-size:.65rem"></i>
-                          </button>
-                          <button class="btn btn-xs btn-outline-secondary"
-                                  @click.stop="quickRiwayat(item)">
-                            <i class="fas fa-history" style="font-size:.65rem"></i>
-                          </button>
+                        <!-- ASSIGN KE BLOK -->
+                        <div v-if="isAdmin" class="mt-1">
+                          <div v-if="assigningItem === item.idUnik"
+                               class="d-flex gap-1 flex-wrap" @click.stop>
+                            <select class="form-select form-select-sm"
+                                    style="max-width:100px;font-size:.72rem"
+                                    v-model="assignBlokNama">
+                              <option value="">Pilih Blok...</option>
+                              <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
+                                {{ b.nama }}
+                              </option>
+                            </select>
+                            <input type="number" step="any" placeholder="Kg"
+                                   class="form-control form-control-sm text-center"
+                                   style="max-width:75px"
+                                   v-model="assignStokTanpaLok">
+                            <button class="btn btn-xs btn-success"
+                                    @click.stop="simpanAssignTanpaLok(item)">
+                              <i class="fas fa-check" style="font-size:.65rem"></i>
+                            </button>
+                            <button class="btn btn-xs btn-secondary"
+                                    @click.stop="assigningItem = ''">
+                              <i class="fas fa-times" style="font-size:.65rem"></i>
+                            </button>
+                          </div>
+                          <div v-else class="d-flex gap-1 justify-content-end">
+                            <button class="btn btn-xs btn-outline-primary"
+                                    @click.stop="bukaAssignTanpaLok(item)">
+                              <i class="fas fa-plus me-1" style="font-size:.65rem"></i> Set Blok & Kg
+                            </button>
+                            <button class="btn btn-xs btn-outline-secondary"
+                                    @click.stop="quickRiwayat(item)">
+                              <i class="fas fa-history" style="font-size:.65rem"></i>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -186,7 +278,7 @@
                   <div class="blok-total">
                     <span class="text-muted">Total Tanpa Lokasi</span>
                     <span class="fw-bold text-warning">
-                      {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.sisaTanpaBlok)||0), 0)) }} Kg
+                      {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.stok)||0), 0)) }} Kg
                     </span>
                   </div>
                 </div>
@@ -196,6 +288,7 @@
           </div>
         </div>
 
+        <!-- FOOTER -->
         <div class="modal-footer bg-light py-2 d-flex justify-content-between fw-bold small">
           <div>Total Blok: <span class="text-primary">{{ blokData.length }}</span></div>
           <div>Grand Total: <span class="text-primary fs-6">{{ fmt(grandTotal) }}</span> Kg</div>
@@ -226,10 +319,28 @@ const namaBlokBaru   = ref('')
 const activeBlok     = ref('')
 const searchBlok     = ref('')
 
+// Edit stok per blok
+const editingItem = ref('')
+const editStokVal = ref(0)
+
+// Assign item ke blok dari dalam blok
+const assigningToBlok  = ref('')
+const assignRawKey     = ref('')
+const assignStokVal    = ref('')
+const assignSuggestions = ref([])
+const assignDrop       = ref(false)
+const assignItemPilih  = ref(null)
+
+// Assign dari tanpa lokasi
+const assigningItem      = ref('')
+const assignBlokNama     = ref('')
+const assignStokTanpaLok = ref('')
+
 const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
 })
 
+// ── KELOLA BLOK ──
 const tambahBlok = async () => {
   if (!namaBlokBaru.value.trim()) return
   const nama = namaBlokBaru.value.trim().toUpperCase()
@@ -237,81 +348,25 @@ const tambahBlok = async () => {
     window.Swal.fire('Sudah Ada', `Blok ${nama} sudah terdaftar.`, 'warning')
     return
   }
-  const id = 'blok_' + Date.now()
-  await set(dbRef(db, `master_blok/${id}`), { nama })
+  await set(dbRef(db, `master_blok/blok_${Date.now()}`), { nama })
   namaBlokBaru.value = ''
 }
 
 const hapusBlok = async (id) => {
   const result = await window.Swal.fire({
-    title: 'Hapus Blok?',
-    text: 'Item di blok ini tidak ikut terhapus.',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#dc3545'
+    title: 'Hapus Blok?', text: 'Item tidak ikut terhapus.',
+    icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545'
   })
   if (!result.isConfirmed) return
   await remove(dbRef(db, `master_blok/${id}`))
 }
 
-// LOGIKA PINDAH BLOK YANG BARU + OPTIMISTIC UI
-const assignBlok = async (item, targetBlok, asalBlok = null) => {
-  if (!targetBlok) return
-  try {
-    const bloks = { ...(item.bloks || {}) }
-    let qtyYangDipindah = 0;
-
-    if (asalBlok) {
-      qtyYangDipindah = parseFloat(item.stokBlok) || 0;
-      if (qtyYangDipindah <= 0) return;
-      delete bloks[asalBlok];
-    } else {
-      qtyYangDipindah = parseFloat(item.sisaTanpaBlok) || 0;
-      if (qtyYangDipindah <= 0) return;
-    }
-
-    const targetKey = targetBlok.toUpperCase();
-    bloks[targetKey] = (parseFloat(bloks[targetKey]) || 0) + qtyYangDipindah;
-
-    // === OPTIMISTIC UI UPDATE ===
-    // Memaksa Vue memindahkan item di layar seketika, sebelum Firebase selesai loading
-    const idx = dbStok.value.findIndex(x => x.idUnik === item.idUnik);
-    if (idx !== -1) {
-      dbStok.value[idx].bloks = bloks;
-      dbStok.value = [...dbStok.value]; // Trigger reactivity Vue
-    }
-    // ============================
-
-    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks: bloks,
-      tglUpdate: new Date().toISOString()
-    });
-
-    window.Swal.fire({
-      icon: 'success',
-      title: asalBlok ? `Dipindah ke ${targetBlok}` : `Diset ke Blok ${targetBlok}`,
-      timer: 1000,
-      showConfirmButton: false
-    })
-  } catch(e) {
-    window.Swal.fire('Error', e.message, 'error')
-  }
-}
-
+// ── COMPUTED DATA ──
 const blokData = computed(() => {
   return masterBlok.value.map(blok => {
-    let items = []
-    let totalStok = 0
-    
-    dbStok.value.forEach(i => {
-      if (i.bloks && i.bloks[blok.nama]) {
-        items.push({
-          ...i,
-          stokBlok: parseFloat(i.bloks[blok.nama])
-        })
-        totalStok += parseFloat(i.bloks[blok.nama])
-      }
-    })
+    let items = dbStok.value
+      .filter(i => i.bloks && (i.bloks[blok.nama] || 0) > 0)
+      .map(i => ({ ...i, stokDiBlok: parseFloat(i.bloks[blok.nama] || 0) }))
 
     if (searchBlok.value) {
       const q = searchBlok.value.toLowerCase()
@@ -320,33 +375,16 @@ const blokData = computed(() => {
         (i.kodeErp || '').toLowerCase().includes(q) ||
         (i.warna   || '').toLowerCase().includes(q)
       )
-      totalStok = items.reduce((s, i) => s + i.stokBlok, 0)
     }
-    
+    const totalStok = items.reduce((s, i) => s + i.stokDiBlok, 0)
     return { nama: blok.nama, items, totalStok }
   }).filter(blok => searchBlok.value ? blok.items.length > 0 : true)
 })
 
 const tanpaLokasi = computed(() => {
-  let items = []
-  
-  dbStok.value.forEach(i => {
-    const totalStok = parseFloat(i.stok) || 0
-    let stokDiBlok = 0
-    if (i.bloks) {
-       stokDiBlok = Object.values(i.bloks).reduce((s, val) => s + parseFloat(val), 0)
-    }
-    
-    const selisih = totalStok - stokDiBlok
-    
-    if (selisih > 0.01) {
-       items.push({
-         ...i,
-         sisaTanpaBlok: selisih
-       })
-    }
-  })
-
+  let items = dbStok.value.filter(i =>
+    !i.bloks || Object.keys(i.bloks).length === 0
+  )
   if (searchBlok.value) {
     const q = searchBlok.value.toLowerCase()
     items = items.filter(i =>
@@ -362,6 +400,174 @@ const grandTotal = computed(() =>
   dbStok.value.reduce((s, i) => s + (parseFloat(i.stok) || 0), 0)
 )
 
+// ── EDIT KG PER BLOK ──
+const bukaEditStok = (item, blokNama) => {
+  editingItem.value = item.idUnik + blokNama
+  editStokVal.value = item.stokDiBlok
+}
+
+const simpanStokBlok = async (item, blokNama) => {
+  const stokBaru = parseFloat(editStokVal.value)
+  if (isNaN(stokBaru) || stokBaru < 0) return
+  try {
+    const bloks = { ...(item.bloks || {}) }
+    if (stokBaru <= 0) delete bloks[blokNama]
+    else bloks[blokNama] = parseFloat(stokBaru.toFixed(2))
+
+    const totalStok = parseFloat(
+      Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
+    )
+    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
+      bloks, stok: totalStok,
+      lokasi: Object.keys(bloks)[0] || ''
+    })
+    editingItem.value = ''
+    window.Swal.fire({ icon: 'success', title: 'Tersimpan!', timer: 800, showConfirmButton: false })
+  } catch(e) { window.Swal.fire('Error', e.message, 'error') }
+}
+
+// ── PINDAH BLOK ──
+const pindahBlok = async (item, blokAsal, blokTujuan) => {
+  if (!blokTujuan) return
+  try {
+    const bloks      = { ...(item.bloks || {}) }
+    const stokPindah = parseFloat(bloks[blokAsal] || 0)
+    if (stokPindah <= 0) return
+
+    bloks[blokTujuan] = parseFloat(((bloks[blokTujuan] || 0) + stokPindah).toFixed(2))
+    delete bloks[blokAsal]
+
+    const totalStok = parseFloat(
+      Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
+    )
+    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
+      bloks, stok: totalStok,
+      lokasi: Object.keys(bloks)[0] || ''
+    })
+    window.Swal.fire({
+      icon: 'success',
+      title: `Dipindah ke Blok ${blokTujuan}`,
+      timer: 800, showConfirmButton: false
+    })
+  } catch(e) { window.Swal.fire('Error', e.message, 'error') }
+}
+
+// ── HAPUS DARI BLOK ──
+const hapusDariBlok = async (item, blokNama) => {
+  const result = await window.Swal.fire({
+    title: 'Hapus dari Blok?',
+    text: `Item akan dihapus dari Blok ${blokNama}.`,
+    icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545'
+  })
+  if (!result.isConfirmed) return
+  try {
+    const bloks = { ...(item.bloks || {}) }
+    delete bloks[blokNama]
+    const totalStok = parseFloat(
+      Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
+    )
+    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
+      bloks, stok: totalStok,
+      lokasi: Object.keys(bloks)[0] || ''
+    })
+  } catch(e) { window.Swal.fire('Error', e.message, 'error') }
+}
+
+// ── TAMBAH ITEM KE BLOK (dari dalam blok) ──
+const bukaAssignKeBlok = (blokNama) => {
+  assigningToBlok.value = blokNama
+  assignRawKey.value    = ''
+  assignStokVal.value   = ''
+  assignItemPilih.value = null
+}
+
+const onInputAssign = () => {
+  assignItemPilih.value = null
+  if (!assignRawKey.value) { assignSuggestions.value = []; assignDrop.value = false; return }
+  const tokens = assignRawKey.value.toUpperCase().trim().split(/\s+/)
+  assignSuggestions.value = dbStok.value.filter(i => {
+    const h = [i.kodeErp || '', i.nama || '', i.warna || ''].join(' ').toUpperCase()
+    return tokens.every(t => h.includes(t))
+  }).slice(0, 8)
+  assignDrop.value = assignSuggestions.value.length > 0
+}
+
+const pilihAssignItem = (item) => {
+  assignItemPilih.value = item
+  assignRawKey.value    = item.kodeErp
+  assignDrop.value      = false
+}
+
+const simpanAssignKeBlok = async (blokNama) => {
+  if (!assignItemPilih.value) {
+    window.Swal.fire('Peringatan', 'Pilih item dulu.', 'warning'); return
+  }
+  const stokBaru = parseFloat(assignStokVal.value)
+  if (isNaN(stokBaru) || stokBaru <= 0) {
+    window.Swal.fire('Peringatan', 'Isi jumlah Kg.', 'warning'); return
+  }
+  try {
+    const item  = assignItemPilih.value
+    const bloks = { ...(item.bloks || {}) }
+    bloks[blokNama] = parseFloat(((bloks[blokNama] || 0) + stokBaru).toFixed(2))
+    const totalStok = parseFloat(
+      Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
+    )
+    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
+      bloks, stok: totalStok,
+      lokasi: Object.keys(bloks)[0] || ''
+    })
+    assigningToBlok.value = ''
+    assignRawKey.value    = ''
+    assignStokVal.value   = ''
+    assignItemPilih.value = null
+    window.Swal.fire({
+      icon: 'success',
+      title: `Ditambahkan ke Blok ${blokNama}`,
+      timer: 800, showConfirmButton: false
+    })
+  } catch(e) { window.Swal.fire('Error', e.message, 'error') }
+}
+
+// ── ASSIGN DARI TANPA LOKASI ──
+const bukaAssignTanpaLok = (item) => {
+  assigningItem.value      = item.idUnik
+  assignBlokNama.value     = ''
+  assignStokTanpaLok.value = item.stok
+}
+
+const simpanAssignTanpaLok = async (item) => {
+  if (!assignBlokNama.value) {
+    window.Swal.fire('Peringatan', 'Pilih blok dulu.', 'warning'); return
+  }
+  const stokBaru = parseFloat(assignStokTanpaLok.value)
+  if (isNaN(stokBaru) || stokBaru <= 0) {
+    window.Swal.fire('Peringatan', 'Isi jumlah Kg.', 'warning'); return
+  }
+  try {
+    const bloks = { ...(item.bloks || {}) }
+    bloks[assignBlokNama.value] = parseFloat(
+      ((bloks[assignBlokNama.value] || 0) + stokBaru).toFixed(2)
+    )
+    const totalStok = parseFloat(
+      Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
+    )
+    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
+      bloks, stok: totalStok,
+      lokasi: Object.keys(bloks)[0] || ''
+    })
+    assigningItem.value      = ''
+    assignBlokNama.value     = ''
+    assignStokTanpaLok.value = ''
+    window.Swal.fire({
+      icon: 'success',
+      title: `Ditambahkan ke Blok ${assignBlokNama.value}`,
+      timer: 800, showConfirmButton: false
+    })
+  } catch(e) { window.Swal.fire('Error', e.message, 'error') }
+}
+
+// ── TOGGLE & SEARCH ──
 const toggleBlok = nama => {
   activeBlok.value = activeBlok.value === nama ? '' : nama
 }
@@ -375,6 +581,7 @@ watch(searchBlok, val => {
   }
 })
 
+// ── QUICK AKSI ──
 const quickTrans = (tipe, item) => {
   emit('close')
   setTimeout(() => bukaTransaksi(tipe, item), 300)
@@ -411,7 +618,22 @@ onMounted(() => loadMasterBlok())
   padding: 10px 14px; background: #f8f9fa;
   border-top: 2px solid #dee2e6; font-size: .85rem;
 }
-.btn-xs {
-  padding: 2px 6px; font-size: .7rem; border-radius: 4px;
+.btn-xs { padding: 2px 6px; font-size: .7rem; border-radius: 4px; }
+.ac-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: #fff; border: 1.5px solid #0d6efd;
+  border-top: none; border-radius: 0 0 8px 8px;
+  z-index: 9999; max-height: 180px; overflow-y: auto;
+  box-shadow: 0 6px 16px rgba(0,0,0,.12);
 }
+.ac-item {
+  padding: 6px 10px; cursor: pointer; font-size: .8rem;
+  border-bottom: 1px solid #f0f0f0; display: flex;
+  align-items: center; gap: 5px;
+}
+.ac-item:hover { background: #e7f1ff; }
+.ac-kode  { font-weight: 700; color: #1e3c72; min-width: 100px; font-family: monospace; }
+.ac-nama  { color: #333; flex: 1; font-size: .75rem; }
+.ac-sep   { color: #aaa; }
+.ac-stok  { font-weight: 700; color: #198754; font-size: .75rem; white-space: nowrap; }
 </style>
