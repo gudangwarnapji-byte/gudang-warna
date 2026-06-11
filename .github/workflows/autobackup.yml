@@ -37,4 +37,4 @@ jobs:
           git add database-backups/
           git commit -m "🗄️ Auto-backup database: $(date +'%Y-%m-%d')" || echo "Tidak ada perubahan data"
           git pull origin main --rebase
-          git push origin main
+          git push origin HEAD:main
