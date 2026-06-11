@@ -3,7 +3,6 @@
     <div class="modal-dialog modal-dialog-centered modal-xl">
       <div class="modal-content border-0 shadow">
 
-        <!-- HEADER -->
         <div class="modal-header text-white" style="background:linear-gradient(135deg,#1e3c72,#2a5298)">
           <div class="w-100">
             <div class="d-flex justify-content-between align-items-center">
@@ -21,7 +20,6 @@
           </div>
         </div>
 
-        <!-- KELOLA BLOK -->
         <div v-if="showKelolaBlok && isAdmin" class="border-bottom p-3 bg-light">
           <div class="d-flex gap-2 align-items-center flex-wrap">
             <input type="text" class="form-control form-control-sm text-uppercase fw-bold"
@@ -41,7 +39,6 @@
           </div>
         </div>
 
-        <!-- SEARCH -->
         <div class="px-3 py-2 border-bottom bg-white">
           <div class="input-group input-group-sm shadow-sm">
             <span class="input-group-text bg-white border-0">
@@ -57,11 +54,9 @@
           </div>
         </div>
 
-        <!-- BODY -->
         <div class="modal-body p-3" style="max-height:70vh;overflow-y:auto">
           <div class="row g-3">
 
-            <!-- PER BLOK -->
             <div v-for="blok in blokData" :key="blok.nama" class="col-12 col-md-6 col-lg-4">
               <div class="blok-card shadow-sm"
                    :class="activeBlok === blok.nama ? 'blok-active' : ''"
@@ -89,7 +84,7 @@
                         <div class="text-muted" style="font-size:.7rem">{{ item.kodeErp }}</div>
                       </div>
                       <div class="text-end ms-2">
-                        <!-- EDIT KG MODE -->
+                        
                         <div v-if="isAdmin && editingItem === item.idUnik + blok.nama"
                              class="d-flex gap-1 align-items-center" @click.stop>
                           <input
@@ -109,7 +104,7 @@
                             <i class="fas fa-times" style="font-size:.65rem"></i>
                           </button>
                         </div>
-                        <!-- TAMPIL KG -->
+                        
                         <div v-else
                              class="fw-bold"
                              :class="item.stokDiBlok < 5 ? 'text-danger' : 'text-success'"
@@ -120,8 +115,7 @@
                              style="font-size:.6rem;opacity:.5;cursor:pointer"
                              @click.stop="bukaEditStok(item, blok.nama)"></i>
                         </div>
-
-                        <!-- AKSI -->
+                        
                         <div v-if="isAdmin" class="d-flex gap-1 mt-1 justify-content-end flex-wrap">
                           <select class="form-select form-select-sm"
                                   style="max-width:100px;font-size:.7rem"
@@ -152,11 +146,11 @@
                             <i class="fas fa-trash-alt" style="font-size:.65rem"></i>
                           </button>
                         </div>
+
                       </div>
                     </div>
                   </div>
 
-                  <!-- TAMBAH ITEM KE BLOK -->
                   <div v-if="isAdmin" class="p-2 border-top bg-light">
                     <div v-if="assigningToBlok === blok.nama" class="d-flex gap-1 flex-wrap" @click.stop>
                       <div style="position:relative;flex:2">
@@ -208,7 +202,6 @@
               </div>
             </div>
 
-            <!-- TANPA LOKASI -->
             <div class="col-12 col-md-6 col-lg-4" v-if="tanpaLokasi.length">
               <div class="blok-card shadow-sm border-warning"
                    :class="activeBlok === '__TANPALOKASI__' ? 'blok-active' : ''"
@@ -221,9 +214,10 @@
                     <span class="badge bg-warning text-dark fw-bold">{{ tanpaLokasi.length }} Item</span>
                   </div>
                   <div class="mt-2 fw-bold text-warning" style="font-size:1.1rem">
-                    {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.stok)||0), 0)) }} Kg
+                    {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.sisaTanpaBlok)||0), 0)) }} Kg
                   </div>
                 </div>
+
                 <div v-if="activeBlok === '__TANPALOKASI__'" class="blok-items">
                   <div v-for="item in tanpaLokasi" :key="item.idUnik"
                        class="blok-item-row" @click.stop>
@@ -234,9 +228,9 @@
                       </div>
                       <div class="text-end ms-2">
                         <div class="fw-bold text-success" style="font-size:.9rem">
-                          {{ fmt(item.stok) }} Kg
+                          {{ fmt(item.sisaTanpaBlok) }} Kg
                         </div>
-                        <!-- ASSIGN KE BLOK -->
+                        
                         <div v-if="isAdmin" class="mt-1">
                           <div v-if="assigningItem === item.idUnik"
                                class="d-flex gap-1 flex-wrap" @click.stop>
@@ -264,7 +258,7 @@
                           <div v-else class="d-flex gap-1 justify-content-end">
                             <button class="btn btn-xs btn-outline-primary"
                                     @click.stop="bukaAssignTanpaLok(item)">
-                              <i class="fas fa-plus me-1" style="font-size:.65rem"></i> Set Blok & Kg
+                              <i class="fas fa-plus me-1" style="font-size:.65rem"></i> Set Blok
                             </button>
                             <button class="btn btn-xs btn-outline-secondary"
                                     @click.stop="quickRiwayat(item)">
@@ -272,13 +266,14 @@
                             </button>
                           </div>
                         </div>
+
                       </div>
                     </div>
                   </div>
                   <div class="blok-total">
                     <span class="text-muted">Total Tanpa Lokasi</span>
                     <span class="fw-bold text-warning">
-                      {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.stok)||0), 0)) }} Kg
+                      {{ fmt(tanpaLokasi.reduce((s,i) => s + (parseFloat(i.sisaTanpaBlok)||0), 0)) }} Kg
                     </span>
                   </div>
                 </div>
@@ -288,7 +283,6 @@
           </div>
         </div>
 
-        <!-- FOOTER -->
         <div class="modal-footer bg-light py-2 d-flex justify-content-between fw-bold small">
           <div>Total Blok: <span class="text-primary">{{ blokData.length }}</span></div>
           <div>Grand Total: <span class="text-primary fs-6">{{ fmt(grandTotal) }}</span> Kg</div>
@@ -354,7 +348,7 @@ const tambahBlok = async () => {
 
 const hapusBlok = async (id) => {
   const result = await window.Swal.fire({
-    title: 'Hapus Blok?', text: 'Item tidak ikut terhapus.',
+    title: 'Hapus Blok?', text: 'Item di dalamnya TIDAK akan terhapus, hanya pindah ke Tanpa Lokasi.',
     icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545'
   })
   if (!result.isConfirmed) return
@@ -365,7 +359,7 @@ const hapusBlok = async (id) => {
 const blokData = computed(() => {
   return masterBlok.value.map(blok => {
     let items = dbStok.value
-      .filter(i => i.bloks && (i.bloks[blok.nama] || 0) > 0)
+      .filter(i => i.bloks && (parseFloat(i.bloks[blok.nama]) || 0) > 0)
       .map(i => ({ ...i, stokDiBlok: parseFloat(i.bloks[blok.nama] || 0) }))
 
     if (searchBlok.value) {
@@ -382,9 +376,18 @@ const blokData = computed(() => {
 })
 
 const tanpaLokasi = computed(() => {
-  let items = dbStok.value.filter(i =>
-    !i.bloks || Object.keys(i.bloks).length === 0
-  )
+  let items = []
+  dbStok.value.forEach(i => {
+    const totalStok = parseFloat(i.stok) || 0
+    const diBlok = i.bloks ? Object.values(i.bloks).reduce((s, v) => s + parseFloat(v), 0) : 0
+    const selisih = totalStok - diBlok
+    
+    // Hanya tampilkan jika ada sisa stok yang tidak terikat blok manapun
+    if (selisih > 0.01) {
+      items.push({ ...i, sisaTanpaBlok: selisih })
+    }
+  })
+
   if (searchBlok.value) {
     const q = searchBlok.value.toLowerCase()
     items = items.filter(i =>
@@ -400,7 +403,8 @@ const grandTotal = computed(() =>
   dbStok.value.reduce((s, i) => s + (parseFloat(i.stok) || 0), 0)
 )
 
-// ── EDIT KG PER BLOK ──
+
+// ── EDIT KG PER BLOK (PERBAIKAN LOGIKA) ──
 const bukaEditStok = (item, blokNama) => {
   editingItem.value = item.idUnik + blokNama
   editStokVal.value = item.stokDiBlok
@@ -409,24 +413,31 @@ const bukaEditStok = (item, blokNama) => {
 const simpanStokBlok = async (item, blokNama) => {
   const stokBaru = parseFloat(editStokVal.value)
   if (isNaN(stokBaru) || stokBaru < 0) return
+
   try {
     const bloks = { ...(item.bloks || {}) }
+    const stokLamaDiBlok = parseFloat(bloks[blokNama] || 0)
+    const selisih = stokBaru - stokLamaDiBlok // Hitung selisihnya
+
     if (stokBaru <= 0) delete bloks[blokNama]
     else bloks[blokNama] = parseFloat(stokBaru.toFixed(2))
 
-    const totalStok = parseFloat(
-      Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
-    )
+    // Total stok WAJIB dikalkulasi menggunakan selisih agar "Tanpa Lokasi" tidak hilang
+    const totalStokBaru = (parseFloat(item.stok) || 0) + selisih
+
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks, stok: totalStok,
+      bloks, 
+      stok: parseFloat(totalStokBaru.toFixed(2)),
       lokasi: Object.keys(bloks)[0] || ''
     })
+
     editingItem.value = ''
     window.Swal.fire({ icon: 'success', title: 'Tersimpan!', timer: 800, showConfirmButton: false })
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// ── PINDAH BLOK ──
+
+// ── PINDAH BLOK (PERBAIKAN LOGIKA) ──
 const pindahBlok = async (item, blokAsal, blokTujuan) => {
   if (!blokTujuan) return
   try {
@@ -437,41 +448,41 @@ const pindahBlok = async (item, blokAsal, blokTujuan) => {
     bloks[blokTujuan] = parseFloat(((bloks[blokTujuan] || 0) + stokPindah).toFixed(2))
     delete bloks[blokAsal]
 
-    const totalStok = parseFloat(
-      Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
-    )
+    // JANGAN UPDATE TOTAL STOK! Total stok tidak berubah karena hanya pindah rak.
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks, stok: totalStok,
+      bloks,
       lokasi: Object.keys(bloks)[0] || ''
     })
+
     window.Swal.fire({
-      icon: 'success',
-      title: `Dipindah ke Blok ${blokTujuan}`,
+      icon: 'success', title: `Dipindah ke Blok ${blokTujuan}`,
       timer: 800, showConfirmButton: false
     })
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// ── HAPUS DARI BLOK ──
+
+// ── HAPUS DARI BLOK (PERBAIKAN LOGIKA) ──
 const hapusDariBlok = async (item, blokNama) => {
   const result = await window.Swal.fire({
     title: 'Hapus dari Blok?',
-    text: `Item akan dihapus dari Blok ${blokNama}.`,
+    text: `Item akan ditarik dari Blok ${blokNama} dan menjadi Tanpa Lokasi.`,
     icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545'
   })
   if (!result.isConfirmed) return
+  
   try {
     const bloks = { ...(item.bloks || {}) }
     delete bloks[blokNama]
-    const totalStok = parseFloat(
-      Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
-    )
+
+    // JANGAN UPDATE TOTAL STOK! Biarkan otomatis masuk ke Tanpa Lokasi.
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks, stok: totalStok,
+      bloks: Object.keys(bloks).length ? bloks : null, 
       lokasi: Object.keys(bloks)[0] || ''
     })
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
+
 
 // ── TAMBAH ITEM KE BLOK (dari dalam blok) ──
 const bukaAssignKeBlok = (blokNama) => {
@@ -506,62 +517,77 @@ const simpanAssignKeBlok = async (blokNama) => {
   if (isNaN(stokBaru) || stokBaru <= 0) {
     window.Swal.fire('Peringatan', 'Isi jumlah Kg.', 'warning'); return
   }
+  
   try {
     const item  = assignItemPilih.value
     const bloks = { ...(item.bloks || {}) }
     bloks[blokNama] = parseFloat(((bloks[blokNama] || 0) + stokBaru).toFixed(2))
-    const totalStok = parseFloat(
-      Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
-    )
+    
+    // Cek apakah barang yang di-assign melebihi total stok yang ada
+    const diBlokSekarang = Object.values(bloks).reduce((s,v) => s + parseFloat(v), 0)
+    let totalStok = parseFloat(item.stok) || 0
+    if (diBlokSekarang > totalStok) {
+      totalStok = diBlokSekarang // Jika lebih, naikkan total stok otomatis (menganggap masuk barang baru)
+    }
+
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks, stok: totalStok,
+      bloks, 
+      stok: parseFloat(totalStok.toFixed(2)),
       lokasi: Object.keys(bloks)[0] || ''
     })
+
     assigningToBlok.value = ''
     assignRawKey.value    = ''
     assignStokVal.value   = ''
     assignItemPilih.value = null
     window.Swal.fire({
-      icon: 'success',
-      title: `Ditambahkan ke Blok ${blokNama}`,
+      icon: 'success', title: `Ditambahkan ke Blok ${blokNama}`,
       timer: 800, showConfirmButton: false
     })
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// ── ASSIGN DARI TANPA LOKASI ──
+
+// ── ASSIGN DARI TANPA LOKASI (PERBAIKAN LOGIKA) ──
 const bukaAssignTanpaLok = (item) => {
   assigningItem.value      = item.idUnik
   assignBlokNama.value     = ''
-  assignStokTanpaLok.value = item.stok
+  assignStokTanpaLok.value = item.sisaTanpaBlok // Ambil dari sisa, bukan total
 }
 
 const simpanAssignTanpaLok = async (item) => {
   if (!assignBlokNama.value) {
     window.Swal.fire('Peringatan', 'Pilih blok dulu.', 'warning'); return
   }
-  const stokBaru = parseFloat(assignStokTanpaLok.value)
-  if (isNaN(stokBaru) || stokBaru <= 0) {
+  const stokMasuk = parseFloat(assignStokTanpaLok.value)
+  if (isNaN(stokMasuk) || stokMasuk <= 0) {
     window.Swal.fire('Peringatan', 'Isi jumlah Kg.', 'warning'); return
   }
+
   try {
     const bloks = { ...(item.bloks || {}) }
     bloks[assignBlokNama.value] = parseFloat(
-      ((bloks[assignBlokNama.value] || 0) + stokBaru).toFixed(2)
+      ((bloks[assignBlokNama.value] || 0) + stokMasuk).toFixed(2)
     )
-    const totalStok = parseFloat(
-      Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2)
-    )
+
+    // Cek apakah barang yang di-assign melebihi total stok
+    const diBlokSekarang = Object.values(bloks).reduce((s,v) => s + parseFloat(v), 0)
+    let totalStok = parseFloat(item.stok) || 0
+    if (diBlokSekarang > totalStok) {
+      totalStok = diBlokSekarang
+    }
+
     await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks, stok: totalStok,
+      bloks, 
+      stok: parseFloat(totalStok.toFixed(2)),
       lokasi: Object.keys(bloks)[0] || ''
     })
+
     assigningItem.value      = ''
     assignBlokNama.value     = ''
     assignStokTanpaLok.value = ''
     window.Swal.fire({
-      icon: 'success',
-      title: `Ditambahkan ke Blok ${assignBlokNama.value}`,
+      icon: 'success', title: `Masuk ke Blok ${assignBlokNama.value}`,
       timer: 800, showConfirmButton: false
     })
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
