@@ -92,7 +92,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue' // Tambah import ref
+import { computed, ref } from 'vue'
 import { ref as dbRef, get, update } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth, user, currentRole } from '../composables/useAuth'
@@ -107,7 +107,8 @@ import { useSuratJalan } from '../composables/useSuratJalan'
 import { useBlok } from '../composables/useBlok'
 
 const { doLogout }     = useAuth()
-const { refreshData }  = useStok()
+// IMPORT JALANKANAUDIT DARI USESTOK!
+const { refreshData, jalankanAudit } = useStok() 
 const { bukaDaily }    = useDaily()
 const { bukaMutasi }   = useMutasi()
 const { bukaBulanan }  = useBulanan()
@@ -118,14 +119,11 @@ const { bukaSuratJalan } = useSuratJalan()
 const { bukaBlok }     = useBlok()
 
 const isAdmin = computed(() => currentRole.value === 'admin')
-
-// State untuk mengontrol buka/tutup menu Laporan
 const showLaporan = ref(false)
 
-// Fungsi untuk membuka laporan sekaligus menutup dropdown
 const bukaLaporan = (fungsiBuka) => {
-  showLaporan.value = false // Tutup menu dulu
-  fungsiBuka() // Baru jalanin fungsi modalnya
+  showLaporan.value = false 
+  fungsiBuka() 
 }
 
 const getTipeGrade = kode => {
@@ -136,70 +134,23 @@ const getTipeGrade = kode => {
   return { tipe, grade }
 }
 
+// FUNGSI KONFIRMASI YANG LANGSUNG MANGGIL FUNGSI DARI useStok.js
 const konfirmasiAudit = () => {
   window.Swal.fire({
     title: 'Audit Global?',
-    html: 'Sistem akan menghitung ulang stok <b>SEMUA BARANG</b>.',
+    html: 'Sistem akan menghitung ulang stok <b>SEMUA BARANG</b> dari nol.',
     icon: 'warning', showCancelButton: true, confirmButtonColor: '#1e3c72'
-  }).then(r => { if (r.isConfirmed) jalankanAudit() })
-}
-
-const jalankanAudit = async () => {
-  window.Swal.fire({ title: 'Menghitung...', allowOutsideClick: false, didOpen: () => window.Swal.showLoading() })
-  try {
-    const [snapM, snapH] = await Promise.all([
-      get(dbRef(db, 'stok_benang')),
-      get(dbRef(db, 'riwayat_transaksi'))
-    ])
-    const masters   = snapM.val() || {}
-    const histories = snapH.val() || {}
-    const updates   = {}
-
-    Object.keys(masters).forEach(id => {
-      let run = Number(masters[id].stokAwal) || 0
-
-      const blokChanges = {}
-
-      Object.values(histories[id] || {})
-        .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
-        .forEach(log => {
-          const q    = Number(log.qty)
-          const blok = log.blok || ''
-
-          if (log.tipe === 'MASUK') {
-            run += q
-            if (blok) blokChanges[blok] = parseFloat(((blokChanges[blok] || 0) + q).toFixed(2))
-          } else if (log.tipe === 'KELUAR') {
-            run -= q
-            if (blok) blokChanges[blok] = parseFloat(((blokChanges[blok] || 0) - q).toFixed(2))
-          } else if (log.tipe === 'OPNAME') {
-            run = q
-            if (blok) blokChanges[blok] = q
-          }
-
-          run = parseFloat(run.toFixed(2))
-          updates[`riwayat_transaksi/${id}/${log.trxId}/stokAkhir`] = run
-        })
-
-      updates[`stok_benang/${id}/stok`] = run
-
-      const bloksLama = masters[id].bloks || {}
-      const bloksBaru = { ...bloksLama }
-
-      Object.keys(blokChanges).forEach(blok => {
-        bloksBaru[blok] = parseFloat(((bloksBaru[blok] || 0) + blokChanges[blok]).toFixed(2))
-        if (bloksBaru[blok] <= 0) delete bloksBaru[blok]
-      })
-
-      updates[`stok_benang/${id}/bloks`] = bloksBaru
-    })
-
-    if (Object.keys(updates).length) {
-      await update(dbRef(db), updates)
-      window.Swal.fire('Selesai!', `Audit ${Object.keys(masters).length} barang berhasil.`, 'success')
+  }).then(async r => { 
+    if (r.isConfirmed) {
+      window.Swal.fire({ title: 'Menghitung Ulang...', allowOutsideClick: false, didOpen: () => window.Swal.showLoading() })
+      
+      // Panggil fungsi yang benar dari useStok.js
+      await jalankanAudit() 
+      
+      window.Swal.fire('Selesai!', 'Audit berhasil. Data sudah bersih.', 'success')
       refreshData()
-    }
-  } catch(e) { window.Swal.fire('Error', e.message, 'error') }
+    } 
+  })
 }
 
 const konfirmasiAutoFix = () => {
