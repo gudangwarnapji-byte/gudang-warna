@@ -43,11 +43,11 @@
           </div>
           <div class="d-grid gap-2 mt-4">
             <button type="button" class="btn btn-warning fw-bold text-dark shadow-sm"
-                    :disabled="saving || isAuditing" @click="simpan">
+                    :disabled="saving" @click="simpan">
               <i class="fas fa-save me-1"></i> {{ saving ? 'Menyimpan...' : 'UPDATE TRANSAKSI' }}
             </button>
             <button type="button" class="btn btn-outline-danger btn-sm fw-bold"
-                    :disabled="saving || isAuditing" @click="hapus">
+                    :disabled="saving" @click="hapus">
               <i class="fas fa-trash-alt me-1"></i> HAPUS TRANSAKSI
             </button>
           </div>
@@ -59,19 +59,22 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ref as dbRef, update, remove, get } from 'firebase/database'
+import { ref as dbRef, update, remove } from 'firebase/database'
 import { db } from '../../firebase'
 import { activeEditTrans } from '../../composables/useEditTrans'
 import { masterBlok } from '../../composables/useBlok'
+// IMPORT JALANKAN AUDIT DARI USESTOK!
+import { useStok } from '../../composables/useStok' 
 
 const emit = defineEmits(['close', 'saved'])
+const { jalankanAudit } = useStok() // TARIK FUNGSI PINTERNYA KE SINI
+
 const tanggal    = ref('')
 const tipe       = ref('')
 const qty        = ref(0)
 const blok       = ref('')
 const keterangan = ref('')
 const saving     = ref(false)
-const isAuditing = ref(false) // KUNCI PENGAMAN
 
 onMounted(() => {
   const trx = activeEditTrans.value
@@ -99,7 +102,8 @@ const simpan = async () => {
       keterangan: keterangan.value.toUpperCase()
     })
     
-    await jalankanAuditSatu(trx.parentId)
+    // PANGGIL AUDIT PINTER DARI USESTOK.JS
+    await jalankanAudit() 
     
     window.Swal.fire({
       icon: 'success', title: 'Tersimpan!',
@@ -131,7 +135,9 @@ const hapus = async () => {
   saving.value = true
   try {
     await remove(dbRef(db, `riwayat_transaksi/${trx.parentId}/${trx.trxId}`))
-    await jalankanAuditSatu(trx.parentId)
+    
+    // PANGGIL AUDIT PINTER DARI USESTOK.JS
+    await jalankanAudit()
     
     window.Swal.fire({
       icon: 'success', title: 'Dihapus!',
@@ -144,66 +150,6 @@ const hapus = async () => {
     window.Swal.fire('Error', e.message, 'error')
   } finally {
     saving.value = false
-  }
-}
-
-const jalankanAuditSatu = async (parentId) => {
-  if (isAuditing.value) return
-  isAuditing.value = true
-  
-  try {
-    const [snapM, snapH] = await Promise.all([
-      get(dbRef(db, `stok_benang/${parentId}`)),
-      get(dbRef(db, `riwayat_transaksi/${parentId}`))
-    ])
-    
-    const master = snapM.val()
-    if (!master) return
-    
-    let run = Number(master.stokAwal) || 0
-    const bloksAudit = {}
-    const logs = snapH.val()
-    const updates = {}
-    
-    if (logs) {
-      Object.values(logs)
-        .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
-        .forEach(l => {
-          const q = Number(l.qty) || 0
-          const blokNama = l.blok || ''
-
-          if (l.tipe === 'MASUK') {
-            run += q
-            if (blokNama) bloksAudit[blokNama] = (parseFloat(bloksAudit[blokNama]) || 0) + q
-          } else if (l.tipe === 'KELUAR') {
-            run -= q
-            if (blokNama) bloksAudit[blokNama] = (parseFloat(bloksAudit[blokNama]) || 0) - q
-          } else if (l.tipe === 'OPNAME') {
-            if (blokNama) {
-              const stokBlokLama = parseFloat(bloksAudit[blokNama]) || 0
-              run += (q - stokBlokLama)
-              bloksAudit[blokNama] = q
-            } else {
-              run = q
-              for (let key in bloksAudit) delete bloksAudit[key]
-            }
-          }
-          run = parseFloat(run.toFixed(2))
-          updates[`riwayat_transaksi/${parentId}/${l.trxId}/stokAkhir`] = run
-        })
-    }
-
-    Object.keys(bloksAudit).forEach(b => {
-      bloksAudit[b] = parseFloat(bloksAudit[b].toFixed(2))
-      if (bloksAudit[b] <= 0) delete bloksAudit[b]
-    })
-
-    updates[`stok_benang/${parentId}/stok`] = run
-    updates[`stok_benang/${parentId}/bloks`] = Object.keys(bloksAudit).length ? bloksAudit : null
-    
-    await update(dbRef(db), updates)
-  } finally {
-    isAuditing.value = false
   }
 }
 </script>
