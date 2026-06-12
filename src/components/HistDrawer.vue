@@ -179,7 +179,7 @@ const formatTime = iso => new Date(iso).toLocaleTimeString('id-ID', {
   hour: '2-digit', minute: '2-digit'
 })
 
-// EXPORT KARTU STOK EXCEL (Sudah ada kolom Blok)
+// EXPORT KARTU STOK EXCEL
 const exportKartuStok = () => {
   if (!activeHistId.value) return
   const item = dbStok.value.find(x => x.idUnik === activeHistId.value)
@@ -209,7 +209,7 @@ const exportKartuStok = () => {
         d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
         d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         r.tipe,
-        (r.blok || '-').toUpperCase(), // Menambahkan blok di laporan Excel
+        (r.blok || '-').toUpperCase(),
         (r.keterangan || '-').toUpperCase(),
         parseFloat(r.qty) || 0,
         parseFloat(r.calculatedBal) || 0
@@ -243,20 +243,17 @@ const loadHistoryData = (id) => {
     const data = snap.val()
     if (!data) return
     
-    let runBal = Number(item?.stokAwal) || 0
     const grouped = {}
     
     Object.values(data)
       .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
       .forEach(r => {
-        const q = Number(r.qty)
-        if (r.tipe === 'MASUK') runBal += q
-        else if (r.tipe === 'KELUAR') runBal -= q
-        else if (r.tipe === 'OPNAME') runBal = q
-        runBal = parseFloat(runBal.toFixed(2))
+        // PERUBAHAN UTAMA: Langsung sedot stokAkhir dari database, gak perlu ngitung manual lagi!
+        const finalBal = r.stokAkhir !== undefined ? parseFloat(r.stokAkhir) : 0
+        
         const key = (r.tanggal || '').slice(0, 7)
         if (!grouped[key]) grouped[key] = []
-        grouped[key].push({ ...r, calculatedBal: runBal })
+        grouped[key].push({ ...r, calculatedBal: finalBal })
       })
     
     allLogs.value = grouped
