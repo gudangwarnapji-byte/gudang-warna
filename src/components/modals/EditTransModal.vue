@@ -29,6 +29,11 @@
             <label class="small fw-bold">Blok Lokasi</label>
             <select class="form-select fw-bold" v-model="blok">
               <option value="">-- Tidak ada / Bebas --</option>
+              
+              <option v-if="blok && !masterBlok.find(b => b.nama === blok)" :value="blok">
+                {{ blok }} (Lokasi Asli)
+              </option>
+              
               <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
                 {{ b.nama }}
               </option>
@@ -94,7 +99,7 @@ const simpan = async () => {
     await update(dbRef(db, path), {
       tanggal:    new Date(tanggal.value).toISOString(),
       tipe:       tipe.value,
-      qty:        parseFloat(qty.value),
+      qty:        parseFloat(qty.value) || 0, // Pastikan angka sah
       blok:       blok.value,
       keterangan: keterangan.value.toUpperCase()
     })
@@ -150,7 +155,7 @@ const hapus = async () => {
   }
 }
 
-// LOGIKA AUDIT ULANG MULTI-BLOK (Re-Kalkulasi Total Stok & Semua Blok dari Titik Nol)
+// LOGIKA AUDIT ULANG MULTI-BLOK (SUDAH DIPERKUAT ANTI-BOCOR)
 const jalankanAuditSatu = async (parentId) => {
   const { get } = await import('firebase/database')
   const [snapM, snapH] = await Promise.all([
@@ -170,7 +175,7 @@ const jalankanAuditSatu = async (parentId) => {
     Object.values(logs)
       .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal)) // Urutkan dari transaksi paling tua
       .forEach(l => {
-        const q = Number(l.qty)
+        const q = Number(l.qty) || 0
         const blokNama = l.blok || ''
 
         if (l.tipe === 'MASUK') {
@@ -188,7 +193,9 @@ const jalankanAuditSatu = async (parentId) => {
             run += selisih
             bloksAudit[blokNama] = q
           } else {
-            run = q // Jarang terjadi opname tanpa blok, tapi untuk safety
+            run = q 
+            // FIX: Kalau admin bikin opname massal tanpa blok, reset blok lain biar sinkron sama total stok
+            for (let key in bloksAudit) delete bloksAudit[key]
           }
         }
         
