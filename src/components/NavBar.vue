@@ -66,7 +66,7 @@
            @click="showLaporan = false"></div>
       
       <ul class="dropdown-menu show border-0 shadow-lg d-block" 
-          style="position: fixed; top: 75px; left: 50%; transform: translateX(-50%); z-index: 1050; border-radius:12px; font-size:.9rem; min-width: 220px;">
+          style="position: fixed; top: 65px; right: 15px; z-index: 1050; border-radius:12px; font-size:.9rem; min-width: 220px;">
         <li><h6 class="dropdown-header fw-bold text-primary text-center">PILIH LAPORAN</h6></li>
         <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaDaily)">
           <i class="fas fa-calendar-day text-info" style="width:24px;text-align:center"></i> Rekap Harian
