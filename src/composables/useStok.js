@@ -29,6 +29,7 @@ export function useStok() {
     })
   }
 
+  // === ENGINE AUDIT DEEP RESET ===
   const jalankanAudit = async () => {
     if (isAuditing) return
     isAuditing = true
@@ -44,48 +45,56 @@ export function useStok() {
       const updates = {}
 
       Object.keys(masters).forEach(parentId => {
-        let run = Number(masters[parentId].stokAwal) || 0
-        const bloksAudit = {}
-        const logs = histories[parentId] || {}
-
-        // Urutkan transaksi dari yang paling lama
-        const sortedLogs = Object.values(logs).sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
+        let totalStok = Number(masters[parentId].stokAwal) || 0
         
-        sortedLogs.forEach(l => {
+        const logs = histories[parentId] ? Object.values(histories[parentId]) : []
+        logs.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
+
+        const bloksTemp = {}
+
+        logs.forEach(l => {
           const q = Number(l.qty) || 0
-          // LOGIKA REKONSILIASI: Paksa blok kosong masuk ke "TANPA LOKASI"
-          const blokNama = (l.blok && l.blok.trim() !== "") ? l.blok : "TANPA LOKASI"
+          
+          // AMBIL NAMA BLOK, JADIKAN UPPERCASE DULU BIAR SERAGAM
+          let lokasi = (l.blok && l.blok.trim() !== "") ? l.blok.trim().toUpperCase() : "Tanpa Lokasi"
+          
+          // INTERCEPT: KALAU HASILNYA "TANPA LOKASI" (huruf besar), KITA UBAH JADI "Tanpa Lokasi" (Title Case)
+          if (lokasi === "TANPA LOKASI") {
+            lokasi = "Tanpa Lokasi"
+          }
 
           if (l.tipe === 'MASUK') {
-            run += q
-            bloksAudit[blokNama] = (parseFloat(bloksAudit[blokNama] || 0) + q)
+            totalStok += q
+            bloksTemp[lokasi] = (bloksTemp[lokasi] || 0) + q
           } 
           else if (l.tipe === 'KELUAR') {
-            run -= q
-            bloksAudit[blokNama] = (parseFloat(bloksAudit[blokNama] || 0) - q)
+            totalStok -= q
+            bloksTemp[lokasi] = (bloksTemp[lokasi] || 0) - q
           } 
           else if (l.tipe === 'OPNAME') {
-            const stokBlokLama = parseFloat(bloksAudit[blokNama] || 0)
+            const stokBlokLama = parseFloat(bloksTemp[lokasi] || 0)
             const selisih = q - stokBlokLama
-            run += selisih
-            bloksAudit[blokNama] = q
+            totalStok += selisih
+            bloksTemp[lokasi] = q
           }
           
-          run = parseFloat(run.toFixed(2))
-          updates[`riwayat_transaksi/${parentId}/${l.trxId}/stokAkhir`] = run
+          updates[`riwayat_transaksi/${parentId}/${l.trxId}/stokAkhir`] = parseFloat(totalStok.toFixed(2))
         })
 
-        // Bersihkan data blok yang sudah habis (nol/negatif)
-        Object.keys(bloksAudit).forEach(b => {
-          bloksAudit[b] = parseFloat(bloksAudit[b].toFixed(2))
-          if (bloksAudit[b] <= 0.001) delete bloksAudit[b]
+        Object.keys(bloksTemp).forEach(b => {
+          if (bloksTemp[b] <= 0.001) {
+            delete bloksTemp[b]
+          } else {
+            bloksTemp[b] = parseFloat(bloksTemp[b].toFixed(2))
+          }
         })
 
-        updates[`stok_benang/${parentId}/stok`] = run
-        updates[`stok_benang/${parentId}/bloks`] = Object.keys(bloksAudit).length > 0 ? bloksAudit : null
+        updates[`stok_benang/${parentId}/stok`] = parseFloat(totalStok.toFixed(2))
+        updates[`stok_benang/${parentId}/bloks`] = Object.keys(bloksTemp).length > 0 ? bloksTemp : null
       })
 
       await update(dbRef(db), updates)
+      console.log("Audit Deep Reset Selesai. Penggabungan 'Tanpa Lokasi' Berhasil.")
     } catch (e) {
       console.error("Audit Gagal:", e)
     } finally {
@@ -102,8 +111,12 @@ export function useStok() {
     sBaru = parseFloat(sBaru.toFixed(2))
 
     const bloks = { ...(item.bloks || {}) }
-    // Jika tidak ada lokasi baru, masukkan ke TANPA LOKASI
-    const blokNama = (lokasiBaru && lokasiBaru.trim() !== "") ? lokasiBaru : "TANPA LOKASI"
+    
+    // FORMAT LOKASI TRANSAKSI BARU
+    let blokNama = (lokasiBaru && lokasiBaru.trim() !== "") ? lokasiBaru.trim().toUpperCase() : "Tanpa Lokasi"
+    if (blokNama === "TANPA LOKASI") {
+      blokNama = "Tanpa Lokasi"
+    }
 
     let stokBlok = parseFloat(bloks[blokNama] || 0)
     if (tipe === 'MASUK') stokBlok += qty
@@ -119,7 +132,7 @@ export function useStok() {
     const updates = {}
     
     updates[`stok_benang/${idUnik}/stok`] = sBaru
-    updates[`stok_benang/${idUnik}/bloks`] = bloks
+    updates[`stok_benang/${idUnik}/bloks`] = Object.keys(bloks).length > 0 ? bloks : null
     updates[`stok_benang/${idUnik}/tglUpdate`] = now.toISOString()
     
     updates[`riwayat_transaksi/${idUnik}/${trxId}`] = {
@@ -128,7 +141,7 @@ export function useStok() {
       stokAkhir: sBaru,
       tanggal: now.toISOString(),
       tipe,
-      blok: lokasiBaru || "", // Tetap simpan asli di riwayat
+      blok: lokasiBaru || "", 
       keterangan: ket
     }
     
