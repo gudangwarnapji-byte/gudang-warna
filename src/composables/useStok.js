@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { ref as dbRef, onValue, update, push } from 'firebase/database'
+import { ref as dbRef, onValue, update, push, get } from 'firebase/database'
 import { db } from '../firebase'
 
 export const dbStok = ref([])
@@ -7,6 +7,7 @@ export const itemVelocity = ref({})
 export const loading = ref(false)
 
 let isListening = false 
+let isAuditing = false // KUNCI PENGAMAN BARU
 
 export function useStok() {
   const refreshData = () => {
@@ -32,7 +33,8 @@ export function useStok() {
   const kalkulasiFastSlow = () => {
     const tglBatas = new Date()
     tglBatas.setDate(tglBatas.getDate() - 30)
-    onValue(dbRef(db, 'riwayat_transaksi'), snap => {
+    // Gunakan get() agar tidak memicu listener berulang
+    get(dbRef(db, 'riwayat_transaksi')).then(snap => {
       const hs = snap.val() || {}
       const vel = {}
       dbStok.value.forEach(i => {
@@ -48,21 +50,78 @@ export function useStok() {
           : 'DEAD'
       })
       itemVelocity.value = vel
-    }, { onlyOnce: true })
+    })
+  }
+
+  // AUDIT GLOBAL DENGAN KUNCI PENGAMAN
+  const jalankanAudit = async () => {
+    if (isAuditing) return
+    isAuditing = true
+    try {
+      const [snapM, snapH] = await Promise.all([
+        get(dbRef(db, 'stok_benang')),
+        get(dbRef(db, 'riwayat_transaksi'))
+      ])
+      const masters = snapM.val() || {}
+      const histories = snapH.val() || {}
+      const updates = {}
+
+      Object.keys(masters).forEach(parentId => {
+        let run = Number(masters[parentId].stokAwal) || 0
+        const bloksAudit = {}
+        const logs = histories[parentId] || {}
+
+        Object.values(logs)
+          .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
+          .forEach(l => {
+            const q = Number(l.qty) || 0
+            const blokNama = l.blok || ''
+
+            if (l.tipe === 'MASUK') {
+              run += q
+              if (blokNama) bloksAudit[blokNama] = (parseFloat(bloksAudit[blokNama]) || 0) + q
+            } else if (l.tipe === 'KELUAR') {
+              run -= q
+              if (blokNama) bloksAudit[blokNama] = (parseFloat(bloksAudit[blokNama]) || 0) - q
+            } else if (l.tipe === 'OPNAME') {
+              if (blokNama) {
+                const stokBlokLama = parseFloat(bloksAudit[blokNama]) || 0
+                run += (q - stokBlokLama)
+                bloksAudit[blokNama] = q
+              } else {
+                run = q
+                for (let key in bloksAudit) delete bloksAudit[key]
+              }
+            }
+            run = parseFloat(run.toFixed(2))
+            updates[`riwayat_transaksi/${parentId}/${l.trxId}/stokAkhir`] = run
+          })
+
+        Object.keys(bloksAudit).forEach(b => {
+          bloksAudit[b] = parseFloat(bloksAudit[b].toFixed(2))
+          if (bloksAudit[b] <= 0) delete bloksAudit[b]
+        })
+
+        updates[`stok_benang/${parentId}/stok`] = run
+        updates[`stok_benang/${parentId}/bloks`] = Object.keys(bloksAudit).length ? bloksAudit : null
+      })
+
+      await update(dbRef(db), updates)
+    } finally {
+      isAuditing = false
+    }
   }
 
   const kirimTransaksi = async (idUnik, tipe, qty, ket, lokasiBaru) => {
     const item = dbStok.value.find(x => x.idUnik === idUnik)
     if (!item) return
     
-    // 1. Hitung Total Stok Master (Independen dari blok)
     const sLama = Number(item.stok) || 0
     let sBaru = tipe === 'MASUK' ? sLama + qty 
               : tipe === 'KELUAR' ? sLama - qty 
               : qty
     sBaru = parseFloat(sBaru.toFixed(2))
 
-    // 2. Update Data Blok
     const bloks = { ...(item.bloks || {}) }
     const blokNama = lokasiBaru || ''
 
@@ -70,14 +129,13 @@ export function useStok() {
       let stokBlok = parseFloat(bloks[blokNama] || 0)
       if (tipe === 'MASUK') stokBlok += qty
       else if (tipe === 'KELUAR') stokBlok -= qty
-      else stokBlok = qty // OPNAME Blok
+      else stokBlok = qty 
 
       stokBlok = parseFloat(stokBlok.toFixed(2))
       if (stokBlok <= 0.001) delete bloks[blokNama]
       else bloks[blokNama] = stokBlok
     }
 
-    // 3. Persiapkan Update Atomic
     const now = new Date()
     const trxId = 'TRX_' + now.getTime()
     const qLog = tipe === 'OPNAME' ? Math.abs(sBaru - sLama) : qty
@@ -101,26 +159,5 @@ export function useStok() {
     await update(dbRef(db), updates)
   }
 
-  const saveNewItem = async (payload) => {
-    await push(dbRef(db, 'stok_benang'), {
-      ...payload,
-      tglUpdate: new Date().toISOString()
-    })
-  }
-
-  const updateLokasi = async (id, lokasi) => {
-    const item = dbStok.value.find(x => x.idUnik === id)
-    if (!item) return
-    
-    const bloks = {}
-    if (lokasi && item.stok > 0) {
-      bloks[lokasi.toUpperCase()] = parseFloat(item.stok)
-    }
-    
-    await update(dbRef(db, `stok_benang/${id}`), {
-      bloks: Object.keys(bloks).length ? bloks : null
-    })
-  }
-
-  return { refreshData, kirimTransaksi, saveNewItem, updateLokasi }
+  return { refreshData, kirimTransaksi, jalankanAudit }
 }
