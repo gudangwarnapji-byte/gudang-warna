@@ -19,11 +19,12 @@
         </small>
         
         <div class="d-flex flex-wrap gap-2 mt-1">
-          <template v-if="daftarBlok.length">
+          <template v-if="daftarBlok.length || sisaTanpaBlok > 0">
             <div v-for="b in daftarBlok" :key="b.nama" class="blok-pill">
               <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
               {{ b.nama }} <span class="ms-1 fw-bold opacity-75">({{ fmt(b.qty) }})</span>
             </div>
+            
             <div v-if="sisaTanpaBlok > 0" class="blok-pill-warning">
               <i class="fas fa-map-marker-alt me-1" style="font-size:.7rem"></i>
               Tanpa Lokasi <span class="ms-1 fw-bold">({{ fmt(sisaTanpaBlok) }})</span>
@@ -110,21 +111,37 @@ const velocityBadge = computed(() => {
   return '<span class="badge bg-secondary badge-custom ms-1 fw-bold">DEAD</span>'
 })
 
-// Logika membaca objek "bloks"
+// LOGIKA BARU: Filter blok, pisahkan yang bernama "Tanpa Lokasi"
 const daftarBlok = computed(() => {
   const bloks = props.item?.bloks
   if (!bloks) return []
   return Object.entries(bloks)
-    .filter(([_, qty]) => parseFloat(qty) > 0)
+    .filter(([nama, qty]) => {
+      // Hilangkan "Tanpa Lokasi" dari daftar biru
+      return parseFloat(qty) > 0 && nama.trim().toUpperCase() !== 'TANPA LOKASI'
+    })
     .map(([nama, qty]) => ({ nama, qty: parseFloat(qty) }))
 })
 
-// Menghitung apakah ada stok yang nyangkut tidak punya blok
+// LOGIKA BARU: Gabungkan nilai dari database "Tanpa Lokasi" + selisih hantu (jika ada)
 const sisaTanpaBlok = computed(() => {
+  const bloks = props.item?.bloks || {}
+  let qtyEksplisit = 0
+  
+  // 1. Tarik angka yang secara eksplisit ada di key "Tanpa Lokasi"
+  Object.entries(bloks).forEach(([nama, qty]) => {
+    if (nama.trim().toUpperCase() === 'TANPA LOKASI') {
+      qtyEksplisit += parseFloat(qty) || 0
+    }
+  })
+
+  // 2. Hitung kalau-kalau ada selisih stok (total stok - semua stok di blok)
   const totalStok = parseFloat(props.item?.stok) || 0
-  const stokDiBlok = daftarBlok.value.reduce((s, b) => s + b.qty, 0)
-  const selisih = totalStok - stokDiBlok
-  return selisih > 0.01 ? selisih : 0
+  const semuaStokDiBlok = Object.values(bloks).reduce((s, b) => s + (parseFloat(b) || 0), 0)
+  let selisih = totalStok - semuaStokDiBlok
+  if (selisih < 0.01) selisih = 0 // Abaikan sisa desimal error JS
+
+  return qtyEksplisit + selisih
 })
 </script>
 
@@ -157,8 +174,6 @@ const sisaTanpaBlok = computed(() => {
   background: #f8f9fa; color: #6c757d;
   border: 1px dashed #dee2e6;
 }
-
-/* CSS STOK BOX DESAIN BARU */
 .stok-box {
   display: flex; align-items: center; justify-content: space-between;
   border-radius: 8px; padding: 10px 14px;
