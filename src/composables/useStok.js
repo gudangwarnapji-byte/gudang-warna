@@ -6,12 +6,11 @@ export const dbStok = ref([])
 export const itemVelocity = ref({})
 export const loading = ref(false)
 
-// Variabel penanda agar listener tidak diduplikat (Mencegah Memory Leak & Crash)
 let isListening = false 
 
 export function useStok() {
   const refreshData = () => {
-    if (isListening) return // Kalau sudah memantau, jangan buat listener baru!
+    if (isListening) return
     isListening = true
     
     loading.value = true
@@ -56,14 +55,14 @@ export function useStok() {
     const item = dbStok.value.find(x => x.idUnik === idUnik)
     if (!item) return
     
+    // 1. Hitung Total Stok Master (Independen dari blok)
     const sLama = Number(item.stok) || 0
-    let sBaru = parseFloat(
-      (tipe === 'MASUK' ? sLama + qty
-      : tipe === 'KELUAR' ? sLama - qty
-      : qty).toFixed(2)
-    )
+    let sBaru = tipe === 'MASUK' ? sLama + qty 
+              : tipe === 'KELUAR' ? sLama - qty 
+              : qty
+    sBaru = parseFloat(sBaru.toFixed(2))
 
-    // --- LOGIKA MULTI-BLOK BARU ---
+    // 2. Update Data Blok
     const bloks = { ...(item.bloks || {}) }
     const blokNama = lokasiBaru || ''
 
@@ -71,19 +70,14 @@ export function useStok() {
       let stokBlok = parseFloat(bloks[blokNama] || 0)
       if (tipe === 'MASUK') stokBlok += qty
       else if (tipe === 'KELUAR') stokBlok -= qty
-      else stokBlok = qty
+      else stokBlok = qty // OPNAME Blok
 
       stokBlok = parseFloat(stokBlok.toFixed(2))
-
-      // Hapus blok jika stok habis
-      if (stokBlok <= 0) delete bloks[blokNama]
+      if (stokBlok <= 0.001) delete bloks[blokNama]
       else bloks[blokNama] = stokBlok
-
-      // Sinkronkan Total Stok dengan isi Blok
-      sBaru = parseFloat(Object.values(bloks).reduce((s, v) => s + v, 0).toFixed(2))
     }
-    // ------------------------------
 
+    // 3. Persiapkan Update Atomic
     const now = new Date()
     const trxId = 'TRX_' + now.getTime()
     const qLog = tipe === 'OPNAME' ? Math.abs(sBaru - sLama) : qty
@@ -115,7 +109,6 @@ export function useStok() {
   }
 
   const updateLokasi = async (id, lokasi) => {
-    // Sinkronisasi update manual ke format objek bloks
     const item = dbStok.value.find(x => x.idUnik === id)
     if (!item) return
     
