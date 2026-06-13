@@ -190,6 +190,10 @@ const loadData = async () => {
         }
       })
     })
+    
+    // LOGIKA SORTING A-Z BERDASARKAN KODE ERP
+    result.sort((a, b) => (a.kodeErpRef || '').localeCompare(b.kodeErpRef || ''))
+    
     logs.value = result
   } finally {
     loading.value = false
