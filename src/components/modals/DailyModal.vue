@@ -34,7 +34,8 @@
                   <th v-if="currentRole === 'admin'" class="text-center" style="width:40px">
                     <input type="checkbox" class="form-check-input"
                            :checked="allChecked"
-                           @change="toggleAll">
+                           @change="toggleAll"
+                           title="Pilih Semua">
                   </th>
                   <th>Kode &amp; Nama Barang</th>
                   <th>Tipe Transaksi</th>
@@ -58,8 +59,15 @@
                       </td>
                     </tr>
                     <tr class="bg-light">
-                      <td :colspan="currentRole === 'admin' ? 6 : 5" class="fw-bold text-secondary py-2 ps-3" style="font-size:.85rem">
+                      <td v-if="currentRole === 'admin'" class="text-center">
+                        <input type="checkbox" class="form-check-input border-secondary"
+                               :checked="isGroupChecked(group)"
+                               @change="toggleGroup(group, $event)"
+                               title="Pilih semua transaksi di keterangan ini">
+                      </td>
+                      <td :colspan="currentRole === 'admin' ? 5 : 5" class="fw-bold text-secondary py-2 ps-3" style="font-size:.85rem">
                         <i class="fas fa-tag me-1 text-muted"></i> KETERANGAN: {{ group.ket }}
+                        <span class="badge bg-secondary ms-2" style="font-size:0.65rem">{{ group.rows.length }} item</span>
                       </td>
                     </tr>
                     <tr v-for="r in group.rows" :key="r.trxId" :class="checkedIds.includes(r.parentId+'|'+r.trxId) ? 'table-danger' : ''">
@@ -156,6 +164,7 @@ const editDariHarian = (r) => {
   emit('close')
 }
 
+// LOGIKA PILIH SEMUA (ALL)
 const allChecked = computed(() => {
   const allIds = logs.value.map(r => r.parentId + '|' + r.trxId)
   return allIds.length > 0 && allIds.every(id => checkedIds.value.includes(id))
@@ -166,6 +175,24 @@ const toggleAll = (e) => {
     checkedIds.value = logs.value.map(r => r.parentId + '|' + r.trxId)
   } else {
     checkedIds.value = []
+  }
+}
+
+// LOGIKA PILIH PER KETERANGAN (GROUP)
+const isGroupChecked = (group) => {
+  if (!group.rows.length) return false
+  return group.rows.every(r => checkedIds.value.includes(r.parentId + '|' + r.trxId))
+}
+
+const toggleGroup = (group, e) => {
+  const ids = group.rows.map(r => r.parentId + '|' + r.trxId)
+  if (e.target.checked) {
+    // Tambahin yang belum ada di checkedIds
+    const newIds = ids.filter(id => !checkedIds.value.includes(id))
+    checkedIds.value.push(...newIds)
+  } else {
+    // Buang dari checkedIds
+    checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
   }
 }
 
@@ -191,7 +218,7 @@ const loadData = async () => {
       })
     })
     
-    // LOGIKA SORTING A-Z BERDASARKAN KODE ERP
+    // Sort A-Z berdasarkan Kode ERP (Masih ada sesuai request sebelumnya)
     result.sort((a, b) => (a.kodeErpRef || '').localeCompare(b.kodeErpRef || ''))
     
     logs.value = result
@@ -200,7 +227,7 @@ const loadData = async () => {
   }
 }
 
-// FUNGSI HAPUS BULK & RE-AUDIT MULTI-BLOK
+// FUNGSI HAPUS BULK & RE-AUDIT
 const hapusTerpilih = async () => {
   if (!checkedIds.value.length) return
   const result = await window.Swal.fire({
