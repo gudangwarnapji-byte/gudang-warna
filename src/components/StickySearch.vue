@@ -2,7 +2,7 @@
   <div class="sticky-search px-3">
     <div class="search-container shadow-sm mb-3">
       <div class="search-icon">
-        <i class="fas fa-search text-muted"></i>
+        <i class="fas fa-search"></i>
       </div>
       <input
         type="text"
@@ -147,25 +147,27 @@ const getGradeClass = g => {
 </script>
 
 <style scoped>
+/* PAKAI VARIABEL WARNA BUNGLON BIAR SINKRON DENGAN TEMA */
 .sticky-search {
   position: sticky;
   top: 0;
-  background: rgba(248, 250, 252, 0.85);
+  background: var(--nav-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   padding-top: 15px;
   z-index: 1010;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  border-bottom: 1px solid var(--border-color);
 }
 
+/* SEARCH BAR MODERN */
 .search-container {
   display: flex;
   align-items: center;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 8px 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--glass-shadow);
   transition: all 0.3s ease;
 }
 .search-container:focus-within {
@@ -174,7 +176,7 @@ const getGradeClass = g => {
 }
 .search-icon {
   font-size: 1.1rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   margin-right: 12px;
 }
 .search-input {
@@ -184,72 +186,76 @@ const getGradeClass = g => {
   padding: 10px 0;
   font-size: 1rem;
   font-weight: 500;
-  color: #0f172a;
+  color: var(--text-main);
   outline: none;
-  font-family: 'Plus Jakarta Sans', sans-serif;
 }
-.search-input::placeholder { color: #94a3b8; font-weight: 400; }
+.search-input::placeholder { color: var(--text-muted); font-weight: 400; }
 .clear-btn {
-  background: transparent; border: none; color: #cbd5e1; font-size: 1.2rem; cursor: pointer; transition: color 0.2s;
+  background: transparent; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; transition: color 0.2s;
 }
 .clear-btn:hover { color: #ef4444; }
 
+/* FILTER TOGGLE MODERN */
 .filter-toggle-btn {
-  width: 100%; padding: 12px 16px; background: #ffffff;
-  border: 1px solid #e2e8f0; border-radius: 12px;
-  cursor: pointer; font-size: 0.85rem; color: #475569;
+  width: 100%; padding: 12px 16px; background: var(--bg-card);
+  border: 1px solid var(--border-color); border-radius: 12px;
+  cursor: pointer; font-size: 0.85rem; color: var(--text-main);
   display: flex; justify-content: space-between; align-items: center;
   transition: all 0.3s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
-.filter-toggle-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+.filter-toggle-btn:hover { background: var(--bg-main); border-color: var(--border-color); }
 .filter-toggle-btn.has-filter {
-  background: #e0e7ff; border-color: #818cf8; color: #4f46e5;
+  background: rgba(79, 70, 229, 0.1); border-color: #818cf8; color: #4f46e5;
 }
 .filter-toggle-btn.open {
   border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-color: transparent;
 }
-.filter-toggle-btn .chevron { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.filter-toggle-btn .chevron { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: var(--text-muted); }
 .filter-toggle-btn.open .chevron { transform: rotate(-180deg); color: #4f46e5; }
 
+/* FILTER PANEL */
 .filter-collapse { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .filter-collapse.open { max-height: 500px; }
 .filter-inner {
-  padding: 20px; background: #ffffff;
-  border: 1px solid #e2e8f0; border-top: none;
+  padding: 20px; background: var(--bg-card);
+  border: 1px solid var(--border-color); border-top: none;
   border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
   box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
 }
 
 .filter-label {
-  font-size: 0.72rem; font-weight: 800; color: #64748b;
+  font-size: 0.72rem; font-weight: 800; color: var(--text-muted);
   text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;
 }
 
+/* FILTER CHIPS */
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .f-chip {
   display: inline-flex; align-items: center; padding: 6px 14px;
-  background: #f1f5f9; border: 1px solid transparent; border-radius: 20px;
-  cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #475569;
+  background: var(--bg-main); border: 1px solid transparent; border-radius: 20px;
+  cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--text-main);
   transition: all 0.2s ease; white-space: nowrap;
 }
-.f-chip:hover { background: #e2e8f0; color: #0f172a; }
+.f-chip:hover { background: var(--border-color); }
 .f-chip.active { background: #4f46e5; color: #ffffff; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); }
 
-.chip-critical-inactive { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-.chip-critical-inactive:hover { background: #fee2e2; }
+.chip-critical-inactive { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.chip-critical-inactive:hover { background: rgba(239, 68, 68, 0.2); }
 .chip-critical-active { background: #dc2626; color: #ffffff; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2); }
 
+/* FOOTER PANEL */
 .filter-footer {
   display: flex; justify-content: space-between; align-items: center;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border-color);
 }
 .btn-reset { padding: 4px 8px; border-radius: 6px; }
-.btn-reset:hover { background: #fef2f2; }
+.btn-reset:hover { background: rgba(239, 68, 68, 0.1); }
 
+/* STATS BADGES */
 .stat-badge {
-  font-size: 0.8rem; font-weight: 700; color: #475569;
-  background: #ffffff; padding: 6px 12px; border-radius: 8px;
-  border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  font-size: 0.8rem; font-weight: 700; color: var(--text-main);
+  background: var(--bg-card); padding: 6px 12px; border-radius: 8px;
+  border: 1px solid var(--border-color); box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
-.badge-soft-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.badge-soft-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
 </style>
