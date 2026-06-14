@@ -50,10 +50,6 @@ export function useStok() {
 
         const bloksTemp = {}
         
-        if (totalStok !== 0) {
-          bloksTemp["Tanpa Lokasi"] = totalStok
-        }
-
         logs.forEach(l => {
           const q = Number(l.qty) || 0
           const rawBlok = (l.blok || "").trim().toUpperCase()
@@ -87,7 +83,7 @@ export function useStok() {
       })
 
       await update(dbRef(db), updates)
-      console.log("Audit Pure Math Selesai.")
+      console.log("Audit Selesai.")
     } catch (e) {
       console.error("Audit Gagal:", e)
     } finally {
@@ -150,66 +146,31 @@ export function useStok() {
     await update(dbRef(db), updates)
   }
 
-  // === FITUR BARU: MUTASI (PINDAH LOKASI TANPA NAMBAH TOTAL STOK) ===
-  const kirimMutasi = async (idUnik, qty, ket, blokAsal, blokTujuan) => {
-    // Tarik data paling fresh langsung dari DB biar gak tabrakan (Race Condition)
+  // === FITUR MUTASI: HANYA PINDAH LOKASI (TIDAK MASUK RIWAYAT) ===
+  const kirimMutasi = async (idUnik, qty, blokAsal, blokTujuan) => {
     const snap = await get(dbRef(db, `stok_benang/${idUnik}`))
     const item = snap.val()
     if (!item) return
 
-    const totalStok = Number(item.stok) || 0 // TOTAL STOK HARUS TETAP!
     const bloks = { ...(item.bloks || {}) }
+    const asal = (blokAsal || "").trim().toUpperCase() || "Tanpa Lokasi"
+    const tujuan = (blokTujuan || "").trim().toUpperCase() || "Tanpa Lokasi"
 
-    const asal = (blokAsal || "").trim().toUpperCase()
-    const tujuan = (blokTujuan || "").trim().toUpperCase()
-    const namaAsal = (asal === "" || asal === "TANPA LOKASI") ? "Tanpa Lokasi" : asal
-    const namaTujuan = (tujuan === "" || tujuan === "TANPA LOKASI") ? "Tanpa Lokasi" : tujuan
-
-    let stokAsal = parseFloat(bloks[namaAsal] || 0) - qty
-    let stokTujuan = parseFloat(bloks[namaTujuan] || 0) + qty
-
-    bloks[namaAsal] = parseFloat(stokAsal.toFixed(2))
-    bloks[namaTujuan] = parseFloat(stokTujuan.toFixed(2))
+    bloks[asal] = parseFloat(parseFloat(bloks[asal] || 0).toFixed(2)) - qty
+    bloks[tujuan] = parseFloat(parseFloat(bloks[tujuan] || 0).toFixed(2)) + qty
 
     Object.keys(bloks).forEach(b => {
       if (Math.abs(bloks[b]) <= 0.001) delete bloks[b]
+      else bloks[b] = parseFloat(bloks[b].toFixed(2))
     })
 
-    const now = new Date()
-    const timeOut = new Date(now.getTime() - 1000) // Catat keluar 1 detik lebih awal
-    const trxIdOut = 'TRX_' + timeOut.getTime() + '_OUT'
-    const trxIdIn = 'TRX_' + now.getTime() + '_IN'
-
     const updates = {}
-    updates[`stok_benang/${idUnik}/stok`] = totalStok // TOTAL TETAP SAMA KAYA AWAL
     updates[`stok_benang/${idUnik}/bloks`] = Object.keys(bloks).length > 0 ? bloks : null
-    updates[`stok_benang/${idUnik}/tglUpdate`] = now.toISOString()
-
-    // 1. Resi Keluar dari Lokasi Lama
-    updates[`riwayat_transaksi/${idUnik}/${trxIdOut}`] = {
-      trxId: trxIdOut,
-      qty: qty,
-      stokAkhir: parseFloat((totalStok - qty).toFixed(2)),
-      tanggal: timeOut.toISOString(),
-      tipe: 'KELUAR',
-      blok: blokAsal || "",
-      keterangan: ket ? `MUTASI KE ${namaTujuan} (${ket})` : `MUTASI KE ${namaTujuan}`
-    }
-
-    // 2. Resi Masuk ke Lokasi Baru
-    updates[`riwayat_transaksi/${idUnik}/${trxIdIn}`] = {
-      trxId: trxIdIn,
-      qty: qty,
-      stokAkhir: totalStok, // Total stok auto balik utuh!
-      tanggal: now.toISOString(),
-      tipe: 'MASUK',
-      blok: blokTujuan || "",
-      keterangan: ket ? `MUTASI DARI ${namaAsal} (${ket})` : `MUTASI DARI ${namaAsal}`
-    }
+    updates[`stok_benang/${idUnik}/tglUpdate`] = new Date().toISOString()
 
     await update(dbRef(db), updates)
+    // Berhasil mutasi tanpa mengotori riwayat_transaksi!
   }
 
-  // JANGAN LUPA EXPORT kirimMutasi
   return { refreshData, jalankanAudit, kirimTransaksi, kirimMutasi } 
 }
