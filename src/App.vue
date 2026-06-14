@@ -26,6 +26,7 @@
             :role="currentRole"
             @transaksi="onTransaksi"
             @riwayat="onRiwayat"
+            @editTrans="onEditTrans"
           />
         </div>
         
@@ -117,6 +118,12 @@ initAuth(user => {
 
 const onTransaksi = (tipe, item) => bukaTransaksi(tipe, item)
 const onRiwayat   = (id) => bukaRiwayat(id)
+
+// FUNGSI BARU: Meneruskan data item dari CardItem ke State Modal Edit
+const onEditTrans = (item) => {
+  activeEditTrans.value = item
+}
+
 const onEditSaved = () => {
   histDrawerRef.value?.reloadHist()
   dailyModalRef.value?.loadData()
@@ -157,9 +164,9 @@ onUnmounted(() => {
 
 /* VARIABEL WARNA (DARK MODE & BOOTSTRAP DARK) */
 [data-bs-theme="dark"] {
-  --bg-main: #0f172a;       
-  --bg-card: #1e293b;       
-  --text-main: #f8fafc;     
+  --bg-main: #0f172a;        
+  --bg-card: #1e293b;        
+  --text-main: #f8fafc;      
   --text-muted: #94a3b8;    
   --border-color: #334155;  
   
