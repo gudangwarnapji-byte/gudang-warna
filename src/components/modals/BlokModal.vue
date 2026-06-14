@@ -308,7 +308,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { ref as dbRef, set, remove } from 'firebase/database'
 import { db } from '../../firebase'
-// IMPORT KIRIMTRANSAKSI DARI USESTOK!
+// PANGGIL kirimMutasi BIAR TOTAL STOK AMAN TENTRAM
 import { dbStok, useStok } from '../../composables/useStok'
 import { currentRole } from '../../composables/useAuth'
 import { useTrans } from '../../composables/useTrans'
@@ -318,8 +318,7 @@ import { masterBlok, loadMasterBlok } from '../../composables/useBlok'
 const emit = defineEmits(['close'])
 const { bukaTransaksi } = useTrans()
 const { bukaRiwayat }   = useHist()
-// SEDOT FUNGSI KUNCI DARI USESTOK.JS
-const { kirimTransaksi } = useStok() 
+const { kirimTransaksi, kirimMutasi } = useStok() 
 
 const isAdmin        = computed(() => currentRole.value === 'admin')
 const showKelolaBlok = ref(false)
@@ -413,12 +412,12 @@ const grandTotal = computed(() =>
   dbStok.value.reduce((s, i) => s + (parseFloat(i.stok) || 0), 0)
 )
 
+
 // =========================================================================
-// PERUBAHAN FATAL: SEMUA AKSI DI BAWAH INI SEKARANG MEMANGGIL kirimTransaksi()
-// AGAR MENCETAK RESI DAN DIAKUI OLEH AUDIT GLOBAL!
+// MENGGUNAKAN MUTASI AGAR TOTAL STOK TIDAK TERPENGARUH SAMA SEKALI
 // =========================================================================
 
-// 1. EDIT STOK BLOK (JADI OPNAME PER BLOK)
+// 1. EDIT STOK BLOK SECARA MANUAL (Ini tetap Opname karena ngerubah jumlah real blok)
 const bukaEditStok = (item, blokNama) => {
   editingItem.value = item.idUnik + blokNama
   editStokVal.value = item.stokDiBlok
@@ -429,15 +428,13 @@ const simpanStokBlok = async (item, blokNama) => {
   if (isNaN(stokBaru) || stokBaru < 0) return
 
   try {
-    // Pakai kirimTransaksi tipe OPNAME untuk merubah stok blok tersebut secara SAH
     await kirimTransaksi(item.idUnik, 'OPNAME', stokBaru, 'PENYESUAIAN PETA BLOK', blokNama)
-    
     editingItem.value = ''
     window.Swal.fire({ icon: 'success', title: 'Tersimpan!', timer: 800, showConfirmButton: false })
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// 2. PINDAH BLOK
+// 2. PINDAH BLOK (MUTASI MURNI)
 const pindahBlok = async (item, blokAsal, blokTujuan) => {
   if (!blokTujuan) return
   try {
@@ -445,9 +442,8 @@ const pindahBlok = async (item, blokAsal, blokTujuan) => {
     const stokPindah = parseFloat(bloks[blokAsal] || 0)
     if (stokPindah <= 0) return
 
-    // Cetak 2 resi: 1 resi keluar dari blok lama, 1 resi masuk ke blok baru
-    await kirimTransaksi(item.idUnik, 'KELUAR', stokPindah, `PINDAH KE BLOK ${blokTujuan}`, blokAsal)
-    await kirimTransaksi(item.idUnik, 'MASUK', stokPindah, `PINDAHAN DARI BLOK ${blokAsal}`, blokTujuan)
+    // Menggunakan kirimMutasi: Memindahkan dari Asal ke Tujuan TANPA mengubah Total Stok
+    await kirimMutasi(item.idUnik, stokPindah, '', blokAsal, blokTujuan)
 
     window.Swal.fire({
       icon: 'success', title: `Dipindah ke Blok ${blokTujuan}`,
@@ -456,7 +452,7 @@ const pindahBlok = async (item, blokAsal, blokTujuan) => {
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// 3. HAPUS DARI BLOK (PINDAH KE TANPA LOKASI)
+// 3. HAPUS DARI BLOK (MUTASI KE TANPA LOKASI)
 const hapusDariBlok = async (item, blokNama) => {
   const result = await window.Swal.fire({
     title: 'Hapus dari Blok?',
@@ -469,14 +465,13 @@ const hapusDariBlok = async (item, blokNama) => {
     const bloks = { ...(item.bloks || {}) }
     const stokHapus = parseFloat(bloks[blokNama] || 0)
     
-    // Cetak 2 resi: Keluar dari blok ini, Masuk ke Tanpa Lokasi
-    await kirimTransaksi(item.idUnik, 'KELUAR', stokHapus, 'DITARIK DARI BLOK', blokNama)
-    await kirimTransaksi(item.idUnik, 'MASUK', stokHapus, `PENGEMBALIAN DARI BLOK ${blokNama}`, 'Tanpa Lokasi')
+    // Tarik barangnya, balikin ke Tanpa Lokasi (Total stok aman!)
+    await kirimMutasi(item.idUnik, stokHapus, 'DITARIK', blokNama, 'Tanpa Lokasi')
 
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// 4. ASSIGN KE BLOK (DARI DALAM BLOK)
+// 4. ASSIGN KE BLOK (DARI TANPA LOKASI MENGGUNAKAN PENCARIAN)
 const bukaAssignKeBlok = (blokNama) => {
   assigningToBlok.value = blokNama
   assignRawKey.value    = ''
@@ -505,16 +500,16 @@ const simpanAssignKeBlok = async (blokNama) => {
   if (!assignItemPilih.value) {
     window.Swal.fire('Peringatan', 'Pilih item dulu.', 'warning'); return
   }
-  const stokBaru = parseFloat(assignStokVal.value)
-  if (isNaN(stokBaru) || stokBaru <= 0) {
+  const stokMutasi = parseFloat(assignStokVal.value)
+  if (isNaN(stokMutasi) || stokMutasi <= 0) {
     window.Swal.fire('Peringatan', 'Isi jumlah Kg.', 'warning'); return
   }
   
   try {
     const item = assignItemPilih.value
     
-    // Murni cetak resi MASUK ke blok bersangkutan
-    await kirimTransaksi(item.idUnik, 'MASUK', stokBaru, 'PENAMBAHAN VIA PETA BLOK', blokNama)
+    // MUTASI! Tarik dari 'Tanpa Lokasi', masukkan ke Blok. Total Stok = TETAP 3000!
+    await kirimMutasi(item.idUnik, stokMutasi, 'ALOKASI', 'Tanpa Lokasi', blokNama)
 
     assigningToBlok.value = ''
     assignRawKey.value    = ''
@@ -527,7 +522,7 @@ const simpanAssignKeBlok = async (blokNama) => {
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// 5. ASSIGN DARI TANPA LOKASI
+// 5. ASSIGN DARI KOTAK TANPA LOKASI (YANG DI PALING BAWAH)
 const bukaAssignTanpaLok = (item) => {
   assigningItem.value      = item.idUnik
   assignBlokNama.value     = ''
@@ -538,15 +533,14 @@ const simpanAssignTanpaLok = async (item) => {
   if (!assignBlokNama.value) {
     window.Swal.fire('Peringatan', 'Pilih blok dulu.', 'warning'); return
   }
-  const stokMasuk = parseFloat(assignStokTanpaLok.value)
-  if (isNaN(stokMasuk) || stokMasuk <= 0) {
+  const stokMutasi = parseFloat(assignStokTanpaLok.value)
+  if (isNaN(stokMutasi) || stokMutasi <= 0) {
     window.Swal.fire('Peringatan', 'Isi jumlah Kg.', 'warning'); return
   }
 
   try {
-    // Tarik dari Tanpa Lokasi, Masukkan ke Blok Tujuan
-    await kirimTransaksi(item.idUnik, 'KELUAR', stokMasuk, `DIPINDAH KE BLOK ${assignBlokNama.value}`, 'Tanpa Lokasi')
-    await kirimTransaksi(item.idUnik, 'MASUK', stokMasuk, 'ALOKASI DARI TANPA LOKASI', assignBlokNama.value)
+    // MUTASI! Tarik dari 'Tanpa Lokasi', masukkan ke Blok Tujuan. Total Stok = TETAP 3000!
+    await kirimMutasi(item.idUnik, stokMutasi, 'ALOKASI', 'Tanpa Lokasi', assignBlokNama.value)
 
     assigningItem.value      = ''
     assignBlokNama.value     = ''
