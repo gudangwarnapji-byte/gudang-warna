@@ -142,12 +142,8 @@ onUnmounted(() => {
 </script>
 
 <style>
-/* =========================================================
-   GLOBAL CSS VARIABLES (THEME BUNGLON / DARK MODE)
-   ========================================================= */
-
-/* WAKTU SIANG (LIGHT MODE - DEFAULT) */
-:root {
+/* VARIABEL WARNA (LIGHT MODE & BOOTSTRAP LIGHT) */
+:root, [data-bs-theme="light"] {
   --bg-main: #F8FAFC;
   --bg-card: #ffffff;
   --text-main: #0f172a;
@@ -159,22 +155,19 @@ onUnmounted(() => {
   --glass-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
 
-/* WAKTU MALAM (DARK MODE) */
-[data-theme="dark"] {
-  --bg-main: #0f172a;       /* Biru Dongker Gelap */
-  --bg-card: #1e293b;       /* Slate 800 (Warna Kartu Gelap) */
-  --text-main: #f8fafc;     /* Putih Terang */
-  --text-muted: #94a3b8;    /* Abu-abu redup */
-  --border-color: #334155;  /* Border gelap */
+/* VARIABEL WARNA (DARK MODE & BOOTSTRAP DARK) */
+[data-bs-theme="dark"] {
+  --bg-main: #0f172a;       
+  --bg-card: #1e293b;       
+  --text-main: #f8fafc;     
+  --text-muted: #94a3b8;    
+  --border-color: #334155;  
   
   --nav-bg: rgba(30, 41, 59, 0.9);
   --nav-border: rgba(51, 65, 85, 0.5);
   --glass-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
 }
 
-/* =========================================================
-   BASE STYLES
-   ========================================================= */
 body { 
   background-color: var(--bg-main) !important; 
   color: var(--text-main) !important;
@@ -183,7 +176,6 @@ body {
   min-height: 100vh;
 }
 
-/* OFFLINE BADGE */
 .offline-badge {
   position: fixed; top: 0; left: 0; width: 100%;
   background: #ef4444; color: #fff; text-align: center;
@@ -191,7 +183,6 @@ body {
   z-index: 11000; letter-spacing: 0.5px;
 }
 
-/* LOADING OVERLAY MODERN */
 .loading-overlay {
   position: fixed; inset: 0; 
   background: var(--bg-main); 
@@ -200,12 +191,11 @@ body {
   transition: background-color 0.3s ease;
 }
 
-/* EMPTY STATE */
 .empty-state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 60px 20px; text-align: center; color: var(--text-main);
 }
 .empty-icon {
-  font-size: 4rem; color: var(--border-color); margin-bottom: 20px;
+  font-size: 4rem; color: var(--text-muted); margin-bottom: 20px;
 }
 </style>
