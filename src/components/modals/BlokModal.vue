@@ -405,7 +405,6 @@ const simpanStokBlok = async (item, blokNama) => {
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-/* PERBAIKAN DI SINI: Menyeleraskan pemanggilan parameter dengan useStok.js */
 const pindahBlok = async (item, blokAsal, blokTujuan) => {
   if (!blokTujuan) return
   try {
@@ -413,7 +412,6 @@ const pindahBlok = async (item, blokAsal, blokTujuan) => {
     const stokPindah = parseFloat(bloks[blokAsal] || 0)
     if (stokPindah <= 0) return
     
-    // Perbaikan: Di useStok.js strukturnya -> idUnik, qty, blokAsal, blokTujuan
     await kirimMutasi(item.idUnik, stokPindah, blokAsal, blokTujuan)
 
     window.Swal.fire({
@@ -423,7 +421,6 @@ const pindahBlok = async (item, blokAsal, blokTujuan) => {
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-/* PERBAIKAN DI SINI: Menghapus argumen 'DITARIK' yang menggeser urutan parameter */
 const hapusDariBlok = async (item, blokNama) => {
   const result = await window.Swal.fire({
     title: 'Hapus dari Blok?',
@@ -435,7 +432,6 @@ const hapusDariBlok = async (item, blokNama) => {
     const bloks = { ...(item.bloks || {}) }
     const stokHapus = parseFloat(bloks[blokNama] || 0)
     
-    // Perbaikan: Di useStok.js strukturnya -> idUnik, qty, blokAsal, blokTujuan
     await kirimMutasi(item.idUnik, stokHapus, blokNama, 'Tanpa Lokasi')
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
@@ -464,7 +460,6 @@ const pilihAssignItem = (item) => {
   assignDrop.value      = false
 }
 
-/* PERBAIKAN DI SINI: Menghapus parameter 'ALOKASI' agar urutan parameter sesuai */
 const simpanAssignKeBlok = async (blokNama) => {
   if (!assignItemPilih.value) {
     window.Swal.fire('Peringatan', 'Pilih item dulu.', 'warning'); return
@@ -476,8 +471,6 @@ const simpanAssignKeBlok = async (blokNama) => {
   
   try {
     const item = assignItemPilih.value
-    
-    // Perbaikan: Di useStok.js strukturnya -> idUnik, qty, blokAsal, blokTujuan
     await kirimMutasi(item.idUnik, stokMutasi, 'Tanpa Lokasi', blokNama)
 
     assigningToBlok.value = ''
@@ -497,7 +490,6 @@ const bukaAssignTanpaLok = (item) => {
   assignStokTanpaLok.value = item.sisaTanpaBlok 
 }
 
-/* PERBAIKAN DI SINI: Menghapus parameter 'ALOKASI' agar urutan parameter sesuai */
 const simpanAssignTanpaLok = async (item) => {
   if (!assignBlokNama.value) {
     window.Swal.fire('Peringatan', 'Pilih blok dulu.', 'warning'); return
@@ -508,7 +500,6 @@ const simpanAssignTanpaLok = async (item) => {
   }
 
   try {
-    // Perbaikan: Di useStok.js strukturnya -> idUnik, qty, blokAsal, blokTujuan
     await kirimMutasi(item.idUnik, stokMutasi, 'Tanpa Lokasi', assignBlokNama.value)
 
     assigningItem.value      = ''
@@ -591,17 +582,19 @@ onMounted(() => loadMasterBlok())
 .clear-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; }
 .clear-btn:hover { color: #ef4444; }
 
-/* KARTU BLOK */
+/* FIX KARTU BLOK: Hapus overflow:hidden agar dropdown tidak terpotong */
 .blok-card {
   border: 1px solid var(--border-color); border-radius: 16px;
-  overflow: hidden; cursor: pointer; transition: all .2s; background: var(--bg-card);
+  cursor: pointer; transition: all .2s; background: var(--bg-card);
 }
 .blok-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
 .blok-active { border: 2px solid #4f46e5 !important; }
 .blok-active-warning { border: 2px solid #f59e0b !important; }
 
+/* FIX BLOK HEADER: Tambah border radius atas pengganti overflow hidden */
 .blok-header {
   background: linear-gradient(135deg, #4f46e5, #3b82f6); color: #fff; padding: 16px;
+  border-top-left-radius: 15px; border-top-right-radius: 15px;
 }
 .blok-items { padding: 0; border-top: 1px solid var(--border-color); }
 .blok-item-row {
@@ -638,12 +631,20 @@ onMounted(() => loadMasterBlok())
 .border-dashed { border-style: dashed !important; opacity: 0.8; }
 .border-dashed:hover { opacity: 1; }
 
+/* FIX DROPDOWN PENCARIAN */
 .ac-dropdown-new {
   position: absolute; top: calc(100% + 4px); left: 0; right: 0;
   background: var(--bg-card); border: 1px solid var(--border-color);
-  border-radius: 8px; z-index: 1050; max-height: 180px; overflow-y: auto;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  border-radius: 8px; z-index: 9999; max-height: 200px; overflow-y: auto;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
+.ac-dropdown-new::-webkit-scrollbar { width: 6px; }
+.ac-dropdown-new::-webkit-scrollbar-track { background: transparent; }
+.ac-dropdown-new::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 10px; }
+.ac-dropdown-new::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.7); }
+
 .ac-item-new {
   padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border-color);
 }
