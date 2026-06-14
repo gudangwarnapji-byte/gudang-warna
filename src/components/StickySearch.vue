@@ -1,37 +1,38 @@
 <template>
-  <div class="sticky-search">
-    <!-- SEARCH BAR -->
-    <div class="input-group input-group-lg shadow-sm mb-2">
-      <span class="input-group-text bg-white border-0">
+  <div class="sticky-search px-3">
+    <div class="search-container shadow-sm mb-3">
+      <div class="search-icon">
         <i class="fas fa-search text-muted"></i>
-      </span>
+      </div>
       <input
         type="text"
-        class="form-control border-0"
-        placeholder="Cari Kode, Nama, Lokasi..."
+        class="search-input"
+        placeholder="Cari Kode, Nama, Lokasi, atau Warna..."
         autocomplete="off"
         v-model="searchQuery"
       >
+      <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">
+        <i class="fas fa-times-circle"></i>
+      </button>
     </div>
 
-    <!-- FILTER TOGGLE -->
     <div class="px-1 mb-0">
       <button
         :class="['filter-toggle-btn', hasFilter ? 'has-filter' : '', filterPanelOpen ? 'open' : '']"
         @click="togglePanel"
       >
-        <span>
-          <i class="fas fa-filter me-2" style="font-size:.75rem"></i>
-          Filter: <b>{{ filterSummary }}</b>
+        <span class="d-flex align-items-center">
+          <i class="fas fa-sliders-h me-2 text-primary" style="font-size:0.9rem"></i>
+          <span class="fw-medium">Filter Data:</span> 
+          <b class="ms-1" style="font-weight:700">{{ filterSummary }}</b>
         </span>
         <i class="fas fa-chevron-down chevron"></i>
       </button>
     </div>
 
-    <!-- FILTER PANEL -->
     <div :class="['filter-collapse', filterPanelOpen ? 'open' : '']">
       <div class="filter-inner">
-        <div class="filter-label">Jenis Benang</div>
+        <div class="filter-label">Kategori Benang</div>
         <div class="chip-row">
           <span
             v-for="j in jenisOptions"
@@ -39,12 +40,12 @@
             :class="['f-chip', getJenisClass(j)]"
             @click="toggleJenis(j)"
           >
-            <i v-if="j === 'Semua'" class="fas fa-layer-group me-1" style="font-size:.65rem"></i>
+            <i v-if="j === 'Semua'" class="fas fa-layer-group me-1 opacity-50"></i>
             {{ j }}
           </span>
         </div>
 
-        <div class="filter-label mt-2">Grade</div>
+        <div class="filter-label mt-3">Quality Grade</div>
         <div class="chip-row">
           <span
             v-for="g in gradeOptions"
@@ -52,41 +53,50 @@
             :class="['f-chip', getGradeClass(g)]"
             @click="toggleGrade(g)"
           >
-            <i v-if="g === 'Semua'" class="fas fa-layer-group me-1" style="font-size:.65rem"></i>
-            {{ g === 'Semua' ? 'Semua' : 'Grade ' + g }}
+            <i v-if="g === 'Semua'" class="fas fa-layer-group me-1 opacity-50"></i>
+            {{ g === 'Semua' ? 'Semua Grade' : 'Grade ' + g }}
           </span>
         </div>
 
-        <!-- STOK KRITIS FILTER -->
-        <div class="filter-label mt-2">Stok</div>
+        <div class="filter-label mt-3">Status Fisik</div>
         <div class="chip-row">
           <span
-            :class="['f-chip', filterStokKritis ? 'bg-danger text-white' : 'bg-light text-dark']"
+            :class="['f-chip', filterStokKritis ? 'chip-critical-active' : 'chip-critical-inactive']"
             @click="toggleStokKritis"
           >
-            <i class="fas fa-exclamation-triangle me-1" style="font-size:.65rem"></i>
-            Kritis (&lt; 5 Kg)
-            <span v-if="filterStokKritis" class="ms-1 badge bg-white text-danger">{{ kritisList.length }}</span>
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            Stok Kritis (&lt; 5 Kg)
+            <span v-if="filterStokKritis" class="ms-2 badge rounded-pill bg-white text-danger fw-bold shadow-sm">
+              {{ kritisList.length }}
+            </span>
           </span>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mt-2 pt-2"
-             style="border-top:1px solid #f0f0f0">
-          <small class="text-muted">{{ filterActiveLabel }}</small>
+        <div class="filter-footer mt-3 pt-3">
+          <small class="text-muted fw-medium">{{ filterActiveLabel }}</small>
           <button
             v-if="hasFilter"
-            class="btn btn-sm btn-link text-danger p-0 fw-bold"
-            style="font-size:.72rem"
+            class="btn btn-sm btn-reset text-danger fw-bold"
             @click="resetFilter"
-          >Reset Filter</button>
+          >
+            <i class="fas fa-undo-alt me-1"></i> Reset
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- STATS -->
-    <div class="d-flex justify-content-between mt-2 px-1 align-items-center flex-wrap gap-2">
-      <small class="text-muted fw-bold">{{ filteredItems.length }} Item</small>
-      <small v-if="kritisList.length > 0" class="badge bg-danger">⚠️ {{ kritisList.length }} Kritis</small>
+    <div class="d-flex justify-content-between mt-3 px-2 align-items-center flex-wrap gap-2 pb-2">
+      <div class="d-flex align-items-center gap-2">
+        <div class="stat-badge">
+          <i class="fas fa-box-open text-primary me-1"></i> {{ filteredItems.length }} Item Ditampilkan
+        </div>
+      </div>
+      <div v-if="kritisList.length > 0 && !filterStokKritis" 
+           class="badge-soft-danger cursor-pointer px-2 py-1 rounded shadow-sm"
+           style="font-size:0.75rem; font-weight:700; cursor:pointer;"
+           @click="toggleStokKritis">
+        <i class="fas fa-exclamation-circle me-1"></i> {{ kritisList.length }} Kritis
+      </div>
     </div>
   </div>
 </template>
@@ -108,21 +118,21 @@ const hasFilter = computed(() =>
 )
 
 const filterSummary = computed(() => {
-  if (!hasFilter.value) return 'Semua Jenis & Grade'
+  if (!hasFilter.value) return 'Semua Tipe'
   const parts = []
   if (!activeJenis.value.has('Semua')) parts.push([...activeJenis.value].join(', '))
-  if (!activeGrade.value.has('Semua')) parts.push('Grade ' + [...activeGrade.value].join('/'))
-  if (filterStokKritis.value) parts.push('Kritis < 5kg')
-  return parts.join(' · ')
+  if (!activeGrade.value.has('Semua')) parts.push('Gr ' + [...activeGrade.value].join('/'))
+  if (filterStokKritis.value) parts.push('Kritis')
+  return parts.join(' • ')
 })
 
 const filterActiveLabel = computed(() => {
-  if (!hasFilter.value) return ''
+  if (!hasFilter.value) return 'Tidak ada filter aktif.'
   const parts = []
   if (!activeJenis.value.has('Semua')) parts.push([...activeJenis.value].join(', '))
   if (!activeGrade.value.has('Semua')) parts.push('Grade ' + [...activeGrade.value].join('/'))
   if (filterStokKritis.value) parts.push('Stok Kritis < 5kg')
-  return parts.join(' · ')
+  return 'Memfilter: ' + parts.join(' + ')
 })
 
 const getJenisClass = j => {
@@ -140,132 +150,112 @@ const getGradeClass = g => {
 .sticky-search {
   position: sticky;
   top: 0;
-  background: #fff;
-  padding: 12px 0;
-  z-index: 100;
-  box-shadow: 0 2px 4px rgba(0,0,0,.05);
+  background: rgba(248, 250, 252, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding-top: 15px;
+  z-index: 1010;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
 }
 
-.filter-toggle-btn {
-  width: 100%;
-  padding: 10px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: .85rem;
-  font-weight: 600;
-  color: #495057;
+/* SEARCH BAR MODERN */
+.search-container {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
   transition: all 0.3s ease;
 }
-
-.filter-toggle-btn:hover {
-  background: #e9ecef;
-  border-color: #dee2e6;
+.search-container:focus-within {
+  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.1);
+  border-color: #818cf8;
 }
+.search-icon {
+  font-size: 1.1rem;
+  color: #94a3b8;
+  margin-right: 12px;
+}
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #0f172a;
+  outline: none;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.search-input::placeholder { color: #94a3b8; font-weight: 400; }
+.clear-btn {
+  background: transparent; border: none; color: #cbd5e1; font-size: 1.2rem; cursor: pointer; transition: color 0.2s;
+}
+.clear-btn:hover { color: #ef4444; }
 
+/* FILTER TOGGLE MODERN */
+.filter-toggle-btn {
+  width: 100%; padding: 12px 16px; background: #ffffff;
+  border: 1px solid #e2e8f0; border-radius: 12px;
+  cursor: pointer; font-size: 0.85rem; color: #475569;
+  display: flex; justify-content: space-between; align-items: center;
+  transition: all 0.3s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.filter-toggle-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
 .filter-toggle-btn.has-filter {
-  background: #e7f1ff;
-  border-color: #0d6efd;
-  color: #0d6efd;
+  background: #e0e7ff; border-color: #818cf8; color: #4f46e5;
 }
-
 .filter-toggle-btn.open {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-color: transparent;
 }
+.filter-toggle-btn .chevron { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.filter-toggle-btn.open .chevron { transform: rotate(-180deg); color: #4f46e5; }
 
-.filter-toggle-btn .chevron {
-  transition: transform 0.3s ease;
-  font-size: .65rem;
-}
-
-.filter-toggle-btn.open .chevron {
-  transform: rotate(180deg);
-}
-
-.filter-collapse {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-}
-
-.filter-collapse.open {
-  max-height: 500px;
-}
-
+/* FILTER PANEL */
+.filter-collapse { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.filter-collapse.open { max-height: 500px; }
 .filter-inner {
-  padding: 12px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-top: none;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
+  padding: 20px; background: #ffffff;
+  border: 1px solid #e2e8f0; border-top: none;
+  border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
 }
 
 .filter-label {
-  font-size: .75rem;
-  font-weight: 700;
-  color: #6c757d;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-  letter-spacing: 0.5px;
+  font-size: 0.72rem; font-weight: 800; color: #64748b;
+  text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;
 }
 
-.chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
+/* FILTER CHIPS (SOFT PALETTE) */
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .f-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-  background: #fff;
-  border: 1px solid #dee2e6;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: .8rem;
-  font-weight: 600;
-  color: #495057;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  display: inline-flex; align-items: center; padding: 6px 14px;
+  background: #f1f5f9; border: 1px solid transparent; border-radius: 20px;
+  cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #475569;
+  transition: all 0.2s ease; white-space: nowrap;
 }
+.f-chip:hover { background: #e2e8f0; color: #0f172a; }
+.f-chip.active { background: #4f46e5; color: #ffffff; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); }
 
-.f-chip:hover {
-  background: #e9ecef;
-  border-color: #adb5bd;
-}
+.chip-critical-inactive { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.chip-critical-inactive:hover { background: #fee2e2; }
+.chip-critical-active { background: #dc2626; color: #ffffff; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2); }
 
-.f-chip.active {
-  background: #0d6efd;
-  color: #fff;
-  border-color: #0d6efd;
+/* FOOTER PANEL */
+.filter-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid #f1f5f9;
 }
+.btn-reset { padding: 4px 8px; border-radius: 6px; }
+.btn-reset:hover { background: #fef2f2; }
 
-.f-chip.bg-danger {
-  background: #dc3545;
-  color: #fff;
-  border-color: #dc3545;
+/* STATS BADGES */
+.stat-badge {
+  font-size: 0.8rem; font-weight: 700; color: #475569;
+  background: #ffffff; padding: 6px 12px; border-radius: 8px;
+  border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
-
-.f-chip.bg-danger:hover {
-  background: #c82333;
-  border-color: #c82333;
-}
-
-.f-chip.bg-light {
-  background: #f8f9fa;
-  border-color: #dee2e6;
-}
-
-.badge {
-  font-size: .7rem;
-  padding: 2px 6px;
-}
+.badge-soft-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 </style>
