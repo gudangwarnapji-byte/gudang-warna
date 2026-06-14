@@ -8,84 +8,79 @@
         <button class="btn-close" @click="$emit('close')"></button>
       </div>
 
-      <div class="chips-wrap">
-        <span v-for="m in months" :key="m"
-              :class="['hist-chip', m === activeMonth ? 'active' : '']"
-              @click="activeMonth = m">
-          {{ formatMonth(m) }}
-        </span>
-      </div>
-
       <div class="hist-list">
-        <div v-for="r in currentLogs" :key="r.trxId" class="history-item">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <div class="small fw-bold">{{ formatDate(r.tanggal) }}</div>
-              <div class="small text-muted">{{ r.keterangan }}</div>
-            </div>
-            <div class="text-end">
-              <div class="fw-bold" :class="r.tipe === 'MASUK' ? 'text-success' : 'text-danger'">
-                {{ r.tipe === 'MASUK' ? '+' : '-' }}{{ fmt(r.qty) }}
-              </div>
-            </div>
-          </div>
+        <div v-if="loadingHist" class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
         </div>
+        
+        <div v-else-if="Object.keys(allLogs).length === 0" class="text-center py-5 text-muted">
+            <small>Tidak ada data untuk ID: {{ activeHistId }}</small>
+        </div>
+
+        <template v-else v-for="m in months" :key="m">
+            <div class="month-label">{{ formatMonth(m) }}</div>
+            <div v-for="r in allLogs[m]" :key="r.trxId" class="history-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small fw-bold">{{ formatDate(r.tanggal) }}</div>
+                        <div class="small text-muted">{{ r.keterangan }}</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold" :class="r.tipe === 'MASUK' ? 'text-success' : 'text-danger'">
+                            {{ r.tipe === 'MASUK' ? '+' : '-' }}{{ fmt(r.qty) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-/* 1. Overlay Fullscreen */
-.hist-wrapper {
-  position: fixed;
-  inset: 0;
-  z-index: 1055;
-}
+<script setup>
+import { ref, watch, onUnmounted } from 'vue'
+import { ref as dbRef, onValue } from 'firebase/database'
+import { db } from '../firebase'
+import { dbStok } from '../composables/useStok'
+import { activeHistId } from '../composables/useHist'
 
-.hist-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-}
+const emit = defineEmits(['close'])
+const allLogs = ref({})
+const loadingHist = ref(false)
+let unsubscribe = null
 
-/* 2. Drawer Panel Normal (Muncul dari kanan) */
-.hist-drawer {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 350px;
-  height: 100vh;
-  background: var(--bg-card);
-  border-left: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-  animation: slideIn 0.3s ease-out;
-}
+const fmt = n => Number(n || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })
+const formatDate = iso => new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+const formatMonth = m => m.split('-')[1] + '/' + m.split('-')[0]
+const months = computed(() => Object.keys(allLogs.value).sort((a, b) => b.localeCompare(a)))
 
-@keyframes slideIn {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
-}
+const loadHistoryData = (id) => {
+  if (!id) return;
+  console.log("Loading history for ID:", id); // DEBUG LOG
+  
+  if (unsubscribe) unsubscribe();
+  loadingHist.value = true;
+  allLogs.value = {};
+  
+  // Pastikan path Firebase benar (riwayat_transaksi/ID_ITEM)
+  unsubscribe = onValue(dbRef(db, `riwayat_transaksi/${id}`), (snap) => {
+    loadingHist.value = false;
+    const data = snap.val();
+    console.log("Data diterima:", data); // DEBUG LOG
+    
+    if (!data) return;
+    
+    const grouped = {};
+    Object.values(data).forEach(r => {
+      const key = (r.tanggal || '').slice(0, 7);
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(r);
+    });
+    allLogs.value = grouped;
+  });
+};
 
-.drawer-header {
-  padding: 15px 20px;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chips-wrap { padding: 10px; display: flex; gap: 5px; overflow-x: auto; background: var(--bg-main); }
-.hist-chip { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; background: var(--bg-card); border: 1px solid var(--border-color); }
-.hist-chip.active { background: #4f46e5; color: white; }
-
-.hist-list { flex: 1; overflow-y: auto; padding: 10px; }
-.history-item { padding: 10px; border-bottom: 1px solid var(--border-color); }
-
-/* Responsive untuk HP */
-@media (max-width: 576px) {
-  .hist-drawer { width: 90%; }
-}
-</style>
+watch(activeHistId, loadHistoryData, { immediate: true });
+onUnmounted(() => { if (unsubscribe) unsubscribe(); });
+</script>
