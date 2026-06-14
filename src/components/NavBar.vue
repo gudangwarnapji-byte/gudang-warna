@@ -34,7 +34,7 @@
             <i class="fas fa-file-excel text-success"></i>
           </button>
           <button class="btn btn-icon-nav flex-shrink-0" @click="bukaSelisih" title="Cek Selisih vs ERP">
-            <i class="fas fa-balance-scale text-dark"></i>
+            <i class="fas fa-balance-scale text-primary"></i>
           </button>
         </template>
 
@@ -44,7 +44,11 @@
           <i class="fas fa-folder-open me-1 text-info"></i> Laporan
         </button>
 
-        <img v-if="user?.photoURL" :src="user.photoURL" class="user-avatar flex-shrink-0 ms-2">
+        <button class="btn btn-icon-nav theme-toggle-btn flex-shrink-0 ms-1" @click="toggleTheme" title="Ganti Tema">
+          <i :class="isDarkMode ? 'fas fa-sun text-warning' : 'fas fa-moon text-primary'"></i>
+        </button>
+
+        <img v-if="user?.photoURL" :src="user.photoURL" class="user-avatar flex-shrink-0 ms-1">
         <button class="btn btn-logout flex-shrink-0" @click="doLogout" title="Logout">
           <i class="fas fa-power-off"></i>
         </button>
@@ -101,6 +105,7 @@ import { useBatch } from '../composables/useBatch'
 import { useSelisih } from '../composables/useSelisih'
 import { useSuratJalan } from '../composables/useSuratJalan'
 import { useBlok } from '../composables/useBlok'
+import { useTheme } from '../composables/useTheme'
 
 const { doLogout }     = useAuth()
 const { refreshData, jalankanAudit } = useStok() 
@@ -112,6 +117,8 @@ const { bukaBatch }    = useBatch()
 const { bukaSelisih }  = useSelisih()
 const { bukaSuratJalan } = useSuratJalan()
 const { bukaBlok }     = useBlok()
+
+const { isDarkMode, toggleTheme } = useTheme()
 
 const isAdmin = computed(() => currentRole.value === 'admin')
 const showLaporan = ref(false)
@@ -185,18 +192,19 @@ const exportStok = () => {
 
 <style scoped>
 .modern-navbar {
-  background: rgba(255, 255, 255, 0.9) !important;
+  background: var(--nav-bg) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--glass-shadow);
+  border: 1px solid var(--nav-border);
   z-index: 1020;
+  transition: all 0.3s ease;
 }
 
 .logo-box {
   width: 40px; height: 40px;
-  background: #f8fafc;
+  background: var(--bg-main);
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
@@ -204,11 +212,11 @@ const exportStok = () => {
 .logo-box img { height: 26px; }
 .brand-title {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 1.1rem; font-weight: 800; color: #0f172a; line-height: 1; letter-spacing: -0.5px;
+  font-size: 1.1rem; font-weight: 800; color: var(--text-main); line-height: 1; letter-spacing: -0.5px;
 }
 .brand-accent { color: #4f46e5; }
 .brand-subtitle {
-  font-size: 0.65rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
 }
 
 .btn-action-nav {
@@ -217,15 +225,17 @@ const exportStok = () => {
 .btn-add { background: #4f46e5; color: #fff; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); }
 .btn-add:hover { background: #4338ca; transform: translateY(-1px); }
 
-.btn-report { background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; }
-.btn-report:hover { background: #e2e8f0; }
+.btn-report { background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); }
+.btn-report:hover { background: var(--border-color); }
 
 .btn-icon-nav {
   width: 36px; height: 36px; border-radius: 10px; border: 1px solid transparent;
-  background: #f8fafc; display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s; font-size: 0.9rem; padding: 0;
+  background: var(--bg-main); display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; font-size: 0.9rem; padding: 0; color: var(--text-main);
 }
-.btn-icon-nav:hover { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transform: translateY(-1px); }
+.btn-icon-nav:hover { background: var(--bg-card); border-color: var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05); transform: translateY(-1px); }
+
+.theme-toggle-btn { background: var(--bg-main); border: 1px solid var(--border-color); }
 
 .btn-logout {
   width: 36px; height: 36px; border-radius: 10px; border: none;
@@ -233,18 +243,18 @@ const exportStok = () => {
 }
 .btn-logout:hover { background: #fee2e2; }
 
-.divider-vertical { width: 1px; height: 24px; background-color: #e2e8f0; margin: 0 4px; }
-.user-avatar { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; border: 2px solid #e2e8f0; }
+.divider-vertical { width: 1px; height: 24px; background-color: var(--border-color); margin: 0 4px; }
+.user-avatar { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; border: 2px solid var(--border-color); }
 
 .swipe-menu { -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .swipe-menu::-webkit-scrollbar { display: none; }
 
-.backdrop-blur { background: rgba(15, 23, 42, 0.2); backdrop-filter: blur(2px); z-index: 1040; }
+.backdrop-blur { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 1040; }
 .modern-dropdown {
   position: fixed; top: 70px; right: 20px; z-index: 1050; width: 260px;
-  background: #ffffff; border-radius: 16px; padding: 8px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
-  border: 1px solid #f1f5f9; animation: slideDown 0.2s ease-out;
+  background: var(--bg-card); border-radius: 16px; padding: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2), 0 8px 10px -6px rgba(0,0,0,0.1);
+  border: 1px solid var(--border-color); animation: slideDown 0.2s ease-out;
 }
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-10px); }
@@ -252,28 +262,28 @@ const exportStok = () => {
 }
 
 .dropdown-header-custom {
-  font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;
+  font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;
   letter-spacing: 0.5px; padding: 10px 12px;
 }
 .dropdown-item-custom {
   display: flex; align-items: center; padding: 10px 12px; gap: 12px;
-  border-radius: 10px; text-decoration: none; color: #334155; transition: all 0.2s;
+  border-radius: 10px; text-decoration: none; color: var(--text-main); transition: all 0.2s;
 }
-.dropdown-item-custom:hover { background: #f8fafc; color: #0f172a; }
+.dropdown-item-custom:hover { background: var(--bg-main); }
 .icon-box {
   width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
 }
 .item-text { font-weight: 600; font-size: 0.9rem; }
-.dropdown-divider-custom { height: 1px; background: #f1f5f9; margin: 6px 12px; }
+.dropdown-divider-custom { height: 1px; background: var(--border-color); margin: 6px 12px; }
 
-.bg-info-subtle { background-color: #e0f2fe; }
-.text-info { color: #0284c7 !important; }
-.bg-success-subtle { background-color: #d1fae5; }
-.text-success { color: #059669 !important; }
-.bg-primary-subtle { background-color: #e0e7ff; }
-.text-primary { color: #4f46e5 !important; }
-.bg-danger-subtle { background-color: #fee2e2; }
-.text-danger { color: #dc2626 !important; }
-.bg-warning-subtle { background-color: #fef3c7; }
-.text-warning { color: #d97706 !important; }
+.bg-info-subtle { background-color: rgba(2, 132, 199, 0.1); }
+.text-info { color: #38bdf8 !important; }
+.bg-success-subtle { background-color: rgba(5, 150, 105, 0.1); }
+.text-success { color: #34d399 !important; }
+.bg-primary-subtle { background-color: rgba(79, 70, 229, 0.1); }
+.text-primary { color: #818cf8 !important; }
+.bg-danger-subtle { background-color: rgba(220, 38, 38, 0.1); }
+.text-danger { color: #f87171 !important; }
+.bg-warning-subtle { background-color: rgba(217, 119, 6, 0.1); }
+.text-warning { color: #fbbf24 !important; }
 </style>
