@@ -58,6 +58,11 @@
                 @click="$emit('transaksi', 'KELUAR', item)">
           <i class="fas fa-arrow-up me-1"></i> Keluar
         </button>
+        <!-- TOMBOL BARU: Edit Riwayat Transaksi -->
+        <button class="btn btn-action btn-light-action border" title="Edit Riwayat"
+                @click="$emit('editTrans', item)">
+          <i class="fas fa-edit text-primary"></i>
+        </button>
         <button class="btn btn-action btn-light-action border" title="Riwayat"
                 @click="$emit('riwayat', item.idUnik)">
           <i class="fas fa-history text-secondary"></i>
@@ -87,7 +92,8 @@ const props = defineProps({
   role: String
 })
 
-defineEmits(['transaksi', 'riwayat'])
+// PERBAIKAN: Menambahkan 'editTrans' ke dalam defineEmits
+defineEmits(['transaksi', 'riwayat', 'editTrans'])
 
 const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
@@ -141,12 +147,10 @@ const sisaTanpaBlok = computed(() => {
 </script>
 
 <style scoped>
-/* PERBAIKAN: HAPUS * { font-family } BIAR IKON FONT AWESOME NGGAK RUSAK */
-
 .card-item {
   border-radius: 20px;
-  background: var(--bg-card); /* Pakai variabel tema */
-  border: 1px solid var(--border-color); /* Pakai variabel tema */
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   transition: all 0.2s ease-in-out;
 }
 .card-normal {
@@ -170,12 +174,8 @@ const sisaTanpaBlok = computed(() => {
 .badge-soft-primary { background: rgba(79, 70, 229, 0.1); color: #4f46e5; }
 .badge-soft-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .badge-soft-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-
-/* PERBAIKAN KONTRAS: Diubah ke warna Amber/Oranye tua (#d97706) agar lolos uji kontras di mode terang */
 .badge-soft-warning { background: rgba(245, 158, 11, 0.15); color: #d97706; }
-/* Jika mode gelap aktif, dikembalikan ke warna oranye terang semula agar kontras dengan background gelap */
-:deep(.dark) .badge-soft-warning { color: #f59e0b; }
-
+:global([data-bs-theme="dark"]) .badge-soft-warning { color: #f59e0b; }
 .badge-soft-secondary { background: var(--bg-main); color: var(--text-muted); }
 
 .blok-pill {
@@ -183,12 +183,11 @@ const sisaTanpaBlok = computed(() => {
   background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.2);
 }
 
-/* PERBAIKAN KONTRAS: Menyesuaikan pill "Tanpa Lokasi" agar lebih gelap di mode terang */
 .blok-pill-warning {
   font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 600;
   background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.25);
 }
-:deep(.dark) .blok-pill-warning { color: #f59e0b; }
+:global([data-bs-theme="dark"]) .blok-pill-warning { color: #f59e0b; }
 
 .blok-pill-empty {
   font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 500;
