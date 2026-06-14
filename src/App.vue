@@ -26,7 +26,6 @@
             :role="currentRole"
             @transaksi="onTransaksi"
             @riwayat="onRiwayat"
-            @editTrans="onEditTrans"
           />
         </div>
         
@@ -47,6 +46,7 @@
       <AddModal v-if="showAddModal" @close="showAddModal = false" />
       <BatchModal v-if="showBatchModal" @close="showBatchModal = false" />
       <BlokModal v-if="showBlokModal" @close="showBlokModal = false" />
+      
       <EditTransModal
         v-if="activeEditTrans"
         @close="activeEditTrans = null"
@@ -119,11 +119,7 @@ initAuth(user => {
 const onTransaksi = (tipe, item) => bukaTransaksi(tipe, item)
 const onRiwayat   = (id) => bukaRiwayat(id)
 
-// FUNGSI BARU: Meneruskan data item dari CardItem ke State Modal Edit
-const onEditTrans = (item) => {
-  activeEditTrans.value = item
-}
-
+// Fungsi onEditSaved tetap ada untuk mereload data saat edit di dalam modal riwayat selesai
 const onEditSaved = () => {
   histDrawerRef.value?.reloadHist()
   dailyModalRef.value?.loadData()
