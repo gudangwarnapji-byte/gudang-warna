@@ -98,7 +98,6 @@ const isCritical = computed(() => {
   return s < 5 && s !== 0
 })
 
-// MENGUBAH KELAS UNTUK BADGE SOFT PALETTE
 const jenisBadgeColor = computed(() => {
   const t = (props.item.jenis || '').toUpperCase()
   if (t.includes('AJL'))     return 'badge-soft-primary'
@@ -116,7 +115,6 @@ const velocityBadge = computed(() => {
   return '<span class="badge-soft badge-soft-secondary ms-1 fw-bold">DEAD</span>'
 })
 
-// LOGIKA FILTER BLOK TETAP SAMA (AMAN!)
 const daftarBlok = computed(() => {
   const bloks = props.item?.bloks
   if (!bloks) return []
@@ -125,7 +123,6 @@ const daftarBlok = computed(() => {
     .map(([nama, qty]) => ({ nama, qty: parseFloat(qty) }))
 })
 
-// LOGIKA SISA TANPA LOKASI TETAP SAMA (AMAN!)
 const sisaTanpaBlok = computed(() => {
   const bloks = props.item?.bloks || {}
   let qtyEksplisit = 0
@@ -144,14 +141,12 @@ const sisaTanpaBlok = computed(() => {
 </script>
 
 <style scoped>
-/* FONT MODERN (Opsional, pastikan sudah pasang Google Font di index.html) */
-* { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+/* PERBAIKAN: HAPUS * { font-family } BIAR IKON FONT AWESOME NGGAK RUSAK */
 
-/* DESAIN KARTU MODERN */
 .card-item {
   border-radius: 20px;
-  background: #ffffff;
-  border: 1px solid #f1f5f9;
+  background: var(--bg-card); /* Pakai variabel tema */
+  border: 1px solid var(--border-color); /* Pakai variabel tema */
   transition: all 0.2s ease-in-out;
 }
 .card-normal {
@@ -160,67 +155,62 @@ const sisaTanpaBlok = computed(() => {
 .card-critical {
   box-shadow: 0 4px 15px rgba(220, 53, 69, 0.1);
   border-color: #fecaca;
-  background: #fffcfc;
 }
 .card-item:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
 }
 
-.item-title { color: #0f172a; font-size: 1.15rem; }
-.item-meta { color: #64748b; font-size: 0.85rem; font-weight: 500; }
+.item-title { color: var(--text-main); font-size: 1.15rem; }
+.item-meta { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; }
 
-/* SOFT BADGES */
 .badge-soft {
   font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; font-weight: 700; display: inline-block;
 }
-.badge-soft-primary { background: #e0e7ff; color: #3730a3; }
-.badge-soft-success { background: #d1fae5; color: #065f46; }
-.badge-soft-danger { background: #fee2e2; color: #991b1b; }
-.badge-soft-warning { background: #fef3c7; color: #92400e; }
-.badge-soft-secondary { background: #f1f5f9; color: #475569; }
+.badge-soft-primary { background: rgba(79, 70, 229, 0.1); color: #4f46e5; }
+.badge-soft-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.badge-soft-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.badge-soft-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.badge-soft-secondary { background: var(--bg-main); color: var(--text-muted); }
 
-/* BLOK PILLS DIBUAT LEBIH HALUS */
 .blok-pill {
   font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 600;
-  background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;
+  background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.2);
 }
 .blok-pill-warning {
   font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 600;
-  background: #fffbeb; color: #b45309; border: 1px solid #fde68a;
+  background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);
 }
 .blok-pill-empty {
   font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 500;
-  background: #f8fafc; color: #94a3b8; border: 1px dashed #cbd5e1;
+  background: var(--bg-main); color: var(--text-muted); border: 1px dashed var(--border-color);
 }
 
-/* KOTAK STOK (CLEAN & MINIMALIST) */
 .stok-box {
   padding: 12px 16px; border-radius: 12px;
   display: flex; flex-direction: column; gap: 4px;
 }
-.stok-box-aman { background: #f8fafc; border-left: 4px solid #10b981; }
-.stok-box-kritis { background: #fef2f2; border-left: 4px solid #ef4444; }
+.stok-box-aman { background: var(--bg-main); border-left: 4px solid #10b981; }
+.stok-box-kritis { background: rgba(239, 68, 68, 0.05); border-left: 4px solid #ef4444; }
 
-.stok-lbl { font-size: 0.7rem; color: #64748b; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
-.stok-val { font-size: 1.8rem; font-weight: 800; color: #0f172a; line-height: 1; letter-spacing: -1px; }
+.stok-lbl { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+.stok-val { font-size: 1.8rem; font-weight: 800; color: var(--text-main); line-height: 1; letter-spacing: -1px; }
 .stok-box-kritis .stok-val { color: #dc2626; }
-.stok-unit { font-size: 0.9rem; color: #64748b; font-weight: 600; letter-spacing: normal; }
+.stok-unit { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; letter-spacing: normal; }
 
-/* TOMBOL AKSI MODERN */
 .btn-action {
   font-weight: 600; font-size: 0.85rem; padding: 8px 12px; border-radius: 10px;
   transition: all 0.2s; display: flex; align-items: center; justify-content: center;
 }
-.btn-in { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
-.btn-in:hover { background: #d1fae5; color: #047857; }
+.btn-in { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.btn-in:hover { background: rgba(16, 185, 129, 0.2); }
 
-.btn-out { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-.btn-out:hover { background: #fee2e2; color: #b91c1c; }
+.btn-out { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.btn-out:hover { background: rgba(239, 68, 68, 0.2); }
 
-.btn-light-action { background: #ffffff; color: #475569; border-color: #e2e8f0; }
-.btn-light-action:hover { background: #f8fafc; border-color: #cbd5e1; }
+.btn-light-action { background: var(--bg-card); color: var(--text-muted); border-color: var(--border-color); }
+.btn-light-action:hover { background: var(--bg-main); border-color: var(--text-muted); }
 
-.btn-audit-action { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
-.btn-audit-action:hover { background: #fef3c7; color: #b45309; }
+.btn-audit-action { background: rgba(245, 158, 11, 0.1); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.2); }
+.btn-audit-action:hover { background: rgba(245, 158, 11, 0.2); }
 </style>
