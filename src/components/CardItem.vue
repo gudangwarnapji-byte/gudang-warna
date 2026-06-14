@@ -170,17 +170,26 @@ const sisaTanpaBlok = computed(() => {
 .badge-soft-primary { background: rgba(79, 70, 229, 0.1); color: #4f46e5; }
 .badge-soft-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .badge-soft-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.badge-soft-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+/* PERBAIKAN KONTRAS: Diubah ke warna Amber/Oranye tua (#d97706) agar lolos uji kontras di mode terang */
+.badge-soft-warning { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+/* Jika mode gelap aktif, dikembalikan ke warna oranye terang semula agar kontras dengan background gelap */
+:deep(.dark) .badge-soft-warning { color: #f59e0b; }
+
 .badge-soft-secondary { background: var(--bg-main); color: var(--text-muted); }
 
 .blok-pill {
   font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 600;
   background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.2);
 }
+
+/* PERBAIKAN KONTRAS: Menyesuaikan pill "Tanpa Lokasi" agar lebih gelap di mode terang */
 .blok-pill-warning {
   font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 600;
-  background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.25);
 }
+:deep(.dark) .blok-pill-warning { color: #f59e0b; }
+
 .blok-pill-empty {
   font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 500;
   background: var(--bg-main); color: var(--text-muted); border: 1px dashed var(--border-color);
