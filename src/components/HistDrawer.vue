@@ -1,10 +1,8 @@
 <template>
   <div class="hist-wrapper">
-    <!-- Overlay bisa diklik buat tutup -->
     <div class="hist-overlay" @click="$emit('close')"></div>
 
     <div class="hist-drawer shadow-lg">
-      <!-- HEADER -->
       <div class="drawer-header">
         <div class="d-flex justify-content-between align-items-start mb-2">
           <div style="min-width:0; flex:1;">
@@ -20,7 +18,6 @@
         </div>
       </div>
 
-      <!-- CHIPS BULAN -->
       <div class="chips-container">
         <div class="chips-scroll">
           <span v-for="m in months" :key="m"
@@ -31,7 +28,6 @@
         </div>
       </div>
 
-      <!-- LIST RIWAYAT -->
       <div class="hist-list">
         <div v-if="loadingHist" class="text-center py-5">
           <div class="spinner-border text-primary"></div>
@@ -46,7 +42,17 @@
             
             <div class="feed-card" :class="`border-${r.tipe.toLowerCase()}`">
               <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="badge-soft" :class="`badge-soft-${r.tipe.toLowerCase()}`">{{ r.tipe }}</span>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge-soft" :class="`badge-soft-${r.tipe.toLowerCase()}`">{{ r.tipe }}</span>
+                  
+                  <button v-if="isAdmin" 
+                          class="btn btn-sm btn-icon-edit" 
+                          title="Edit Transaksi Ini"
+                          @click="bukaEdit(r)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                </div>
+                
                 <span class="fw-bold fs-6" :class="`text-${r.tipe.toLowerCase()}`">
                   {{ r.tipe === 'MASUK' ? '+' : r.tipe === 'KELUAR' ? '-' : '' }}{{ fmt(r.qty) }} Kg
                 </span>
@@ -73,15 +79,18 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted } from 'vue' // 'computed' sudah diimpor
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { ref as dbRef, onValue } from 'firebase/database'
 import { db } from '../firebase'
 import { dbStok } from '../composables/useStok'
 import { activeHistId } from '../composables/useHist'
 
+// Import role dan activeEditTrans
+import { currentRole } from '../composables/useAuth'
+import { activeEditTrans } from '../composables/useEditTrans'
+
 const emit = defineEmits(['close'])
 
-// FUNGSI FORMAT WAJIB ADA
 const fmt = (n) => Number(n || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
@@ -90,6 +99,7 @@ const activeMonth = ref('');
 const loadingHist = ref(false); 
 let unsubscribe = null
 
+const isAdmin = computed(() => currentRole.value === 'admin')
 const activeItem = computed(() => dbStok.value.find(x => x.idUnik === activeHistId.value))
 const months = computed(() => Object.keys(allLogs.value).sort((a, b) => b.localeCompare(a)))
 const currentLogs = computed(() => (allLogs.value[activeMonth.value] || []).slice().reverse())
@@ -122,6 +132,20 @@ const loadHistoryData = (id) => {
     activeMonth.value = Object.keys(grouped).sort((a,b) => b.localeCompare(a))[0] || ''
   })
 }
+
+// Fitur Buka Edit
+const bukaEdit = (log) => {
+  // Menggabungkan data transaksi dan ID Item agar EditTransModal tahu barang apa yang diedit
+  activeEditTrans.value = { ...log, idUnik: activeItem.value.idUnik, item: activeItem.value }
+  // Opsi: Anda bisa menutup drawer history jika mau, atau membiarkannya terbuka di background
+  // emit('close') 
+}
+
+// Ekspos reloadHist agar bisa dipanggil oleh App.vue saat fitur Edit Selesai Disimpan
+const reloadHist = () => {
+  if (activeHistId.value) loadHistoryData(activeHistId.value)
+}
+defineExpose({ reloadHist })
 
 watch(activeHistId, loadHistoryData, { immediate: true })
 onUnmounted(() => { if (unsubscribe) unsubscribe() })
@@ -157,7 +181,7 @@ onUnmounted(() => { if (unsubscribe) unsubscribe() })
 .hour { font-size: 0.65rem; }
 .feed-card { flex: 1; background: var(--bg-main); border-radius: 12px; padding: 12px 15px; border-left: 5px solid; }
 
-/* STATUS COLORS */
+/* STATUS COLORS & BADGES */
 .border-masuk { border-left-color: #10b981; }
 .border-keluar { border-left-color: #ef4444; }
 .border-opname { border-left-color: #f59e0b; }
@@ -169,4 +193,14 @@ onUnmounted(() => { if (unsubscribe) unsubscribe() })
 .badge-soft-keluar { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
 .badge-soft-opname { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
 .btn-close-custom { background: var(--bg-main); border: 1px solid var(--border-color); width: 32px; height: 32px; border-radius: 8px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+
+/* TOMBOL EDIT RIWAYAT */
+.btn-icon-edit {
+  padding: 2px 6px; font-size: 0.65rem; border-radius: 4px;
+  background: transparent; color: var(--text-muted); border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+.btn-icon-edit:hover {
+  background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border-color: rgba(14, 165, 233, 0.3);
+}
 </style>
