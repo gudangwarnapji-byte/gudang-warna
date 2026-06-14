@@ -16,13 +16,13 @@
 
         <template v-if="isAdmin">
           <button class="btn btn-action-nav btn-add flex-shrink-0" @click="bukaAddModal">
-            <i class="fas fa-plus me-1"></i> Baru
+            <i class="fas fa-plus-circle me-1"></i> Barang
           </button>
           
           <div class="divider-vertical"></div>
 
           <button class="btn btn-icon-nav flex-shrink-0" @click="bukaBatch" title="Input Massal Excel">
-            <i class="fas fa-file-import text-primary"></i>
+            <i class="fas fa-paste text-primary"></i>
           </button>
           <button class="btn btn-icon-nav flex-shrink-0" @click="konfirmasiAudit" title="Audit Ulang Total Stok">
             <i class="fas fa-wrench text-warning"></i>
@@ -41,7 +41,7 @@
         <div class="divider-vertical"></div>
 
         <button class="btn btn-action-nav btn-report flex-shrink-0" @click="showLaporan = true">
-          <i class="fas fa-chart-pie me-1"></i> Laporan
+          <i class="fas fa-folder-open me-1 text-info"></i> Laporan
         </button>
 
         <img v-if="user?.photoURL" :src="user.photoURL" class="user-avatar flex-shrink-0 ms-2">
@@ -184,7 +184,6 @@ const exportStok = () => {
 </script>
 
 <style scoped>
-/* NAVBAR FLOATING STYLE */
 .modern-navbar {
   background: rgba(255, 255, 255, 0.9) !important;
   backdrop-filter: blur(10px);
@@ -195,7 +194,6 @@ const exportStok = () => {
   z-index: 1020;
 }
 
-/* LOGO & BRANDING */
 .logo-box {
   width: 40px; height: 40px;
   background: #f8fafc;
@@ -213,7 +211,6 @@ const exportStok = () => {
   font-size: 0.65rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
 }
 
-/* BUTTONS */
 .btn-action-nav {
   padding: 8px 16px; border-radius: 10px; font-weight: 600; font-size: 0.85rem; border: none; transition: all 0.2s;
 }
@@ -239,11 +236,9 @@ const exportStok = () => {
 .divider-vertical { width: 1px; height: 24px; background-color: #e2e8f0; margin: 0 4px; }
 .user-avatar { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; border: 2px solid #e2e8f0; }
 
-/* SWIPE MENU (MOBILE) */
 .swipe-menu { -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .swipe-menu::-webkit-scrollbar { display: none; }
 
-/* DROPDOWN MENU MODERN */
 .backdrop-blur { background: rgba(15, 23, 42, 0.2); backdrop-filter: blur(2px); z-index: 1040; }
 .modern-dropdown {
   position: fixed; top: 70px; right: 20px; z-index: 1050; width: 260px;
@@ -271,7 +266,6 @@ const exportStok = () => {
 .item-text { font-weight: 600; font-size: 0.9rem; }
 .dropdown-divider-custom { height: 1px; background: #f1f5f9; margin: 6px 12px; }
 
-/* Warna Halus untuk Icon Box */
 .bg-info-subtle { background-color: #e0f2fe; }
 .text-info { color: #0284c7 !important; }
 .bg-success-subtle { background-color: #d1fae5; }
