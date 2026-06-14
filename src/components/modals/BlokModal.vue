@@ -152,9 +152,7 @@
                   </div>
 
                   <div v-if="isAdmin" class="p-2 border-top bg-light">
-                    
                     <div v-if="assigningToBlok === blok.nama" class="p-2 border rounded bg-white shadow-sm" @click.stop>
-                      
                       <div class="mb-2" style="position:relative">
                         <input
                           class="form-control form-control-sm border-primary fw-bold"
@@ -198,7 +196,6 @@
                           <i class="fas fa-times text-danger"></i>
                         </button>
                       </div>
-
                     </div>
 
                     <button v-else
@@ -309,9 +306,10 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { ref as dbRef, set, remove, update } from 'firebase/database'
+import { ref as dbRef, set, remove } from 'firebase/database'
 import { db } from '../../firebase'
-import { dbStok } from '../../composables/useStok'
+// IMPORT KIRIMTRANSAKSI DARI USESTOK!
+import { dbStok, useStok } from '../../composables/useStok'
 import { currentRole } from '../../composables/useAuth'
 import { useTrans } from '../../composables/useTrans'
 import { useHist } from '../../composables/useHist'
@@ -320,6 +318,8 @@ import { masterBlok, loadMasterBlok } from '../../composables/useBlok'
 const emit = defineEmits(['close'])
 const { bukaTransaksi } = useTrans()
 const { bukaRiwayat }   = useHist()
+// SEDOT FUNGSI KUNCI DARI USESTOK.JS
+const { kirimTransaksi } = useStok() 
 
 const isAdmin        = computed(() => currentRole.value === 'admin')
 const showKelolaBlok = ref(false)
@@ -327,11 +327,9 @@ const namaBlokBaru   = ref('')
 const activeBlok     = ref('')
 const searchBlok     = ref('')
 
-// Edit stok per blok
 const editingItem = ref('')
 const editStokVal = ref(0)
 
-// Assign item ke blok dari dalam blok
 const assigningToBlok  = ref('')
 const assignRawKey     = ref('')
 const assignStokVal    = ref('')
@@ -339,7 +337,6 @@ const assignSuggestions = ref([])
 const assignDrop       = ref(false)
 const assignItemPilih  = ref(null)
 
-// Assign dari tanpa lokasi
 const assigningItem      = ref('')
 const assignBlokNama     = ref('')
 const assignStokTanpaLok = ref('')
@@ -396,7 +393,6 @@ const tanpaLokasi = computed(() => {
     const diBlok = i.bloks ? Object.values(i.bloks).reduce((s, v) => s + parseFloat(v), 0) : 0
     const selisih = totalStok - diBlok
     
-    // Hanya tampilkan jika ada sisa stok yang tidak terikat blok manapun
     if (selisih > 0.01) {
       items.push({ ...i, sisaTanpaBlok: selisih })
     }
@@ -417,7 +413,12 @@ const grandTotal = computed(() =>
   dbStok.value.reduce((s, i) => s + (parseFloat(i.stok) || 0), 0)
 )
 
-// ── EDIT KG PER BLOK (PERBAIKAN LOGIKA) ──
+// =========================================================================
+// PERUBAHAN FATAL: SEMUA AKSI DI BAWAH INI SEKARANG MEMANGGIL kirimTransaksi()
+// AGAR MENCETAK RESI DAN DIAKUI OLEH AUDIT GLOBAL!
+// =========================================================================
+
+// 1. EDIT STOK BLOK (JADI OPNAME PER BLOK)
 const bukaEditStok = (item, blokNama) => {
   editingItem.value = item.idUnik + blokNama
   editStokVal.value = item.stokDiBlok
@@ -428,27 +429,15 @@ const simpanStokBlok = async (item, blokNama) => {
   if (isNaN(stokBaru) || stokBaru < 0) return
 
   try {
-    const bloks = { ...(item.bloks || {}) }
-    const stokLamaDiBlok = parseFloat(bloks[blokNama] || 0)
-    const selisih = stokBaru - stokLamaDiBlok 
-
-    if (stokBaru <= 0) delete bloks[blokNama]
-    else bloks[blokNama] = parseFloat(stokBaru.toFixed(2))
-
-    const totalStokBaru = (parseFloat(item.stok) || 0) + selisih
-
-    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks, 
-      stok: parseFloat(totalStokBaru.toFixed(2)),
-      lokasi: Object.keys(bloks)[0] || ''
-    })
-
+    // Pakai kirimTransaksi tipe OPNAME untuk merubah stok blok tersebut secara SAH
+    await kirimTransaksi(item.idUnik, 'OPNAME', stokBaru, 'PENYESUAIAN PETA BLOK', blokNama)
+    
     editingItem.value = ''
     window.Swal.fire({ icon: 'success', title: 'Tersimpan!', timer: 800, showConfirmButton: false })
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// ── PINDAH BLOK (PERBAIKAN LOGIKA) ──
+// 2. PINDAH BLOK
 const pindahBlok = async (item, blokAsal, blokTujuan) => {
   if (!blokTujuan) return
   try {
@@ -456,13 +445,9 @@ const pindahBlok = async (item, blokAsal, blokTujuan) => {
     const stokPindah = parseFloat(bloks[blokAsal] || 0)
     if (stokPindah <= 0) return
 
-    bloks[blokTujuan] = parseFloat(((bloks[blokTujuan] || 0) + stokPindah).toFixed(2))
-    delete bloks[blokAsal]
-
-    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks,
-      lokasi: Object.keys(bloks)[0] || ''
-    })
+    // Cetak 2 resi: 1 resi keluar dari blok lama, 1 resi masuk ke blok baru
+    await kirimTransaksi(item.idUnik, 'KELUAR', stokPindah, `PINDAH KE BLOK ${blokTujuan}`, blokAsal)
+    await kirimTransaksi(item.idUnik, 'MASUK', stokPindah, `PINDAHAN DARI BLOK ${blokAsal}`, blokTujuan)
 
     window.Swal.fire({
       icon: 'success', title: `Dipindah ke Blok ${blokTujuan}`,
@@ -471,7 +456,7 @@ const pindahBlok = async (item, blokAsal, blokTujuan) => {
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// ── HAPUS DARI BLOK (PERBAIKAN LOGIKA) ──
+// 3. HAPUS DARI BLOK (PINDAH KE TANPA LOKASI)
 const hapusDariBlok = async (item, blokNama) => {
   const result = await window.Swal.fire({
     title: 'Hapus dari Blok?',
@@ -482,16 +467,16 @@ const hapusDariBlok = async (item, blokNama) => {
   
   try {
     const bloks = { ...(item.bloks || {}) }
-    delete bloks[blokNama]
+    const stokHapus = parseFloat(bloks[blokNama] || 0)
+    
+    // Cetak 2 resi: Keluar dari blok ini, Masuk ke Tanpa Lokasi
+    await kirimTransaksi(item.idUnik, 'KELUAR', stokHapus, 'DITARIK DARI BLOK', blokNama)
+    await kirimTransaksi(item.idUnik, 'MASUK', stokHapus, `PENGEMBALIAN DARI BLOK ${blokNama}`, 'Tanpa Lokasi')
 
-    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks: Object.keys(bloks).length ? bloks : null, 
-      lokasi: Object.keys(bloks)[0] || ''
-    })
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// ── TAMBAH ITEM KE BLOK (dari dalam blok) ──
+// 4. ASSIGN KE BLOK (DARI DALAM BLOK)
 const bukaAssignKeBlok = (blokNama) => {
   assigningToBlok.value = blokNama
   assignRawKey.value    = ''
@@ -526,21 +511,10 @@ const simpanAssignKeBlok = async (blokNama) => {
   }
   
   try {
-    const item  = assignItemPilih.value
-    const bloks = { ...(item.bloks || {}) }
-    bloks[blokNama] = parseFloat(((bloks[blokNama] || 0) + stokBaru).toFixed(2))
+    const item = assignItemPilih.value
     
-    const diBlokSekarang = Object.values(bloks).reduce((s,v) => s + parseFloat(v), 0)
-    let totalStok = parseFloat(item.stok) || 0
-    if (diBlokSekarang > totalStok) {
-      totalStok = diBlokSekarang 
-    }
-
-    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks, 
-      stok: parseFloat(totalStok.toFixed(2)),
-      lokasi: Object.keys(bloks)[0] || ''
-    })
+    // Murni cetak resi MASUK ke blok bersangkutan
+    await kirimTransaksi(item.idUnik, 'MASUK', stokBaru, 'PENAMBAHAN VIA PETA BLOK', blokNama)
 
     assigningToBlok.value = ''
     assignRawKey.value    = ''
@@ -553,7 +527,7 @@ const simpanAssignKeBlok = async (blokNama) => {
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
-// ── ASSIGN DARI TANPA LOKASI (PERBAIKAN LOGIKA) ──
+// 5. ASSIGN DARI TANPA LOKASI
 const bukaAssignTanpaLok = (item) => {
   assigningItem.value      = item.idUnik
   assignBlokNama.value     = ''
@@ -570,22 +544,9 @@ const simpanAssignTanpaLok = async (item) => {
   }
 
   try {
-    const bloks = { ...(item.bloks || {}) }
-    bloks[assignBlokNama.value] = parseFloat(
-      ((bloks[assignBlokNama.value] || 0) + stokMasuk).toFixed(2)
-    )
-
-    const diBlokSekarang = Object.values(bloks).reduce((s,v) => s + parseFloat(v), 0)
-    let totalStok = parseFloat(item.stok) || 0
-    if (diBlokSekarang > totalStok) {
-      totalStok = diBlokSekarang
-    }
-
-    await update(dbRef(db, `stok_benang/${item.idUnik}`), {
-      bloks, 
-      stok: parseFloat(totalStok.toFixed(2)),
-      lokasi: Object.keys(bloks)[0] || ''
-    })
+    // Tarik dari Tanpa Lokasi, Masukkan ke Blok Tujuan
+    await kirimTransaksi(item.idUnik, 'KELUAR', stokMasuk, `DIPINDAH KE BLOK ${assignBlokNama.value}`, 'Tanpa Lokasi')
+    await kirimTransaksi(item.idUnik, 'MASUK', stokMasuk, 'ALOKASI DARI TANPA LOKASI', assignBlokNama.value)
 
     assigningItem.value      = ''
     assignBlokNama.value     = ''
@@ -650,7 +611,6 @@ onMounted(() => loadMasterBlok())
 }
 .btn-xs { padding: 2px 6px; font-size: .7rem; border-radius: 4px; }
 
-/* CSS Tambahan untuk Autocomplete Baru */
 .ac-dropdown-new {
   position: absolute; top: calc(100% + 4px); left: 0; right: 0;
   background: #fff; border: 1px solid #ced4da;
