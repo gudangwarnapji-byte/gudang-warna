@@ -58,11 +58,6 @@
                 @click="$emit('transaksi', 'KELUAR', item)">
           <i class="fas fa-arrow-up me-1"></i> Keluar
         </button>
-        <!-- TOMBOL BARU: Edit Riwayat Transaksi -->
-        <button class="btn btn-action btn-light-action border" title="Edit Riwayat"
-                @click="$emit('editTrans', item)">
-          <i class="fas fa-edit text-primary"></i>
-        </button>
         <button class="btn btn-action btn-light-action border" title="Riwayat"
                 @click="$emit('riwayat', item.idUnik)">
           <i class="fas fa-history text-secondary"></i>
@@ -92,8 +87,8 @@ const props = defineProps({
   role: String
 })
 
-// PERBAIKAN: Menambahkan 'editTrans' ke dalam defineEmits
-defineEmits(['transaksi', 'riwayat', 'editTrans'])
+// Dikembalikan hanya ke 'transaksi' dan 'riwayat'
+defineEmits(['transaksi', 'riwayat'])
 
 const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
@@ -174,8 +169,10 @@ const sisaTanpaBlok = computed(() => {
 .badge-soft-primary { background: rgba(79, 70, 229, 0.1); color: #4f46e5; }
 .badge-soft-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .badge-soft-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
 .badge-soft-warning { background: rgba(245, 158, 11, 0.15); color: #d97706; }
 :global([data-bs-theme="dark"]) .badge-soft-warning { color: #f59e0b; }
+
 .badge-soft-secondary { background: var(--bg-main); color: var(--text-muted); }
 
 .blok-pill {
