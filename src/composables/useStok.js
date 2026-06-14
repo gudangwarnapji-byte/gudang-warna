@@ -29,7 +29,6 @@ export function useStok() {
     })
   }
 
-  // === ENGINE AUDIT: MATEMATIKA MURNI (TANPA KIAMAT) ===
   const jalankanAudit = async () => {
     if (isAuditing) return
     isAuditing = true
@@ -51,7 +50,6 @@ export function useStok() {
 
         const bloksTemp = {}
         
-        // KUNCI JAWABAN: Masukkan Stok Awal ke wadah Tanpa Lokasi agar selisih Opname bisa dihitung sistem!
         if (totalStok !== 0) {
           bloksTemp["Tanpa Lokasi"] = totalStok
         }
@@ -70,7 +68,6 @@ export function useStok() {
             bloksTemp[lokasi] = (bloksTemp[lokasi] || 0) - q
           } 
           else if (l.tipe === 'OPNAME') {
-            // MATEMATIKA NORMAL: Opname cuma merubah stok di RAK ITU SAJA, rak lain AMAN!
             const stokBlokLama = parseFloat(bloksTemp[lokasi] || 0)
             const selisih = q - stokBlokLama
             totalStok += selisih
@@ -80,13 +77,9 @@ export function useStok() {
           updates[`riwayat_transaksi/${parentId}/${l.trxId}/stokAkhir`] = parseFloat(totalStok.toFixed(2))
         })
 
-        // Sapu bersih pecahan debu desimal JS
         Object.keys(bloksTemp).forEach(b => {
-          if (Math.abs(bloksTemp[b]) <= 0.001) {
-            delete bloksTemp[b]
-          } else {
-            bloksTemp[b] = parseFloat(bloksTemp[b].toFixed(2))
-          }
+          if (Math.abs(bloksTemp[b]) <= 0.001) delete bloksTemp[b]
+          else bloksTemp[b] = parseFloat(bloksTemp[b].toFixed(2))
         })
 
         updates[`stok_benang/${parentId}/stok`] = parseFloat(totalStok.toFixed(2))
@@ -94,7 +87,7 @@ export function useStok() {
       })
 
       await update(dbRef(db), updates)
-      console.log("Audit Selesai. Data kembali utuh.")
+      console.log("Audit Pure Math Selesai.")
     } catch (e) {
       console.error("Audit Gagal:", e)
     } finally {
@@ -157,5 +150,66 @@ export function useStok() {
     await update(dbRef(db), updates)
   }
 
-  return { refreshData, jalankanAudit, kirimTransaksi }
+  // === FITUR BARU: MUTASI (PINDAH LOKASI TANPA NAMBAH TOTAL STOK) ===
+  const kirimMutasi = async (idUnik, qty, ket, blokAsal, blokTujuan) => {
+    // Tarik data paling fresh langsung dari DB biar gak tabrakan (Race Condition)
+    const snap = await get(dbRef(db, `stok_benang/${idUnik}`))
+    const item = snap.val()
+    if (!item) return
+
+    const totalStok = Number(item.stok) || 0 // TOTAL STOK HARUS TETAP!
+    const bloks = { ...(item.bloks || {}) }
+
+    const asal = (blokAsal || "").trim().toUpperCase()
+    const tujuan = (blokTujuan || "").trim().toUpperCase()
+    const namaAsal = (asal === "" || asal === "TANPA LOKASI") ? "Tanpa Lokasi" : asal
+    const namaTujuan = (tujuan === "" || tujuan === "TANPA LOKASI") ? "Tanpa Lokasi" : tujuan
+
+    let stokAsal = parseFloat(bloks[namaAsal] || 0) - qty
+    let stokTujuan = parseFloat(bloks[namaTujuan] || 0) + qty
+
+    bloks[namaAsal] = parseFloat(stokAsal.toFixed(2))
+    bloks[namaTujuan] = parseFloat(stokTujuan.toFixed(2))
+
+    Object.keys(bloks).forEach(b => {
+      if (Math.abs(bloks[b]) <= 0.001) delete bloks[b]
+    })
+
+    const now = new Date()
+    const timeOut = new Date(now.getTime() - 1000) // Catat keluar 1 detik lebih awal
+    const trxIdOut = 'TRX_' + timeOut.getTime() + '_OUT'
+    const trxIdIn = 'TRX_' + now.getTime() + '_IN'
+
+    const updates = {}
+    updates[`stok_benang/${idUnik}/stok`] = totalStok // TOTAL TETAP SAMA KAYA AWAL
+    updates[`stok_benang/${idUnik}/bloks`] = Object.keys(bloks).length > 0 ? bloks : null
+    updates[`stok_benang/${idUnik}/tglUpdate`] = now.toISOString()
+
+    // 1. Resi Keluar dari Lokasi Lama
+    updates[`riwayat_transaksi/${idUnik}/${trxIdOut}`] = {
+      trxId: trxIdOut,
+      qty: qty,
+      stokAkhir: parseFloat((totalStok - qty).toFixed(2)),
+      tanggal: timeOut.toISOString(),
+      tipe: 'KELUAR',
+      blok: blokAsal || "",
+      keterangan: ket ? `MUTASI KE ${namaTujuan} (${ket})` : `MUTASI KE ${namaTujuan}`
+    }
+
+    // 2. Resi Masuk ke Lokasi Baru
+    updates[`riwayat_transaksi/${idUnik}/${trxIdIn}`] = {
+      trxId: trxIdIn,
+      qty: qty,
+      stokAkhir: totalStok, // Total stok auto balik utuh!
+      tanggal: now.toISOString(),
+      tipe: 'MASUK',
+      blok: blokTujuan || "",
+      keterangan: ket ? `MUTASI DARI ${namaAsal} (${ket})` : `MUTASI DARI ${namaAsal}`
+    }
+
+    await update(dbRef(db), updates)
+  }
+
+  // JANGAN LUPA EXPORT kirimMutasi
+  return { refreshData, jalankanAudit, kirimTransaksi, kirimMutasi } 
 }
