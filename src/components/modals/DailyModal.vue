@@ -1,44 +1,47 @@
 <template>
-  <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content border-0 shadow">
+  <div class="modal fade show d-block backdrop-blur" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+      <div class="modal-content modern-modal border-0 shadow-lg">
 
-        <div class="modal-header bg-info text-white pb-3">
+        <div class="modal-header border-0 pb-3">
           <div class="w-100">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h5 class="modal-title fw-bold">Rekapitulasi Harian</h5>
-              <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="modal-title fw-bold d-flex align-items-center gap-2 m-0" style="letter-spacing: -0.5px; color: var(--text-main);">
+                <div class="icon-circle bg-info-subtle text-info">
+                  <i class="fas fa-calendar-day"></i>
+                </div>
+                Rekapitulasi Harian
+              </h5>
+              <button type="button" class="btn-close btn-close-custom" @click="$emit('close')"></button>
             </div>
-            <div class="input-group input-group-sm shadow-sm">
-              <input type="date" class="form-control border-0 fw-bold" v-model="tglPicker" @change="loadData">
-              <button class="btn btn-light text-info fw-bold" @click="loadData">
-                <i class="fas fa-sync-alt"></i>
+            
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+              <input type="date" class="form-control custom-input fw-bold" style="width: auto;" v-model="tglPicker" @change="loadData">
+              <button class="btn btn-sm btn-light-action fw-bold px-3" @click="loadData">
+                <i class="fas fa-sync-alt me-1"></i> Refresh
               </button>
-              <button class="btn btn-success fw-bold ms-1" @click="exportExcel">
-                <i class="fas fa-file-excel"></i>
+              <button class="btn btn-sm btn-success fw-bold px-3" @click="exportExcel">
+                <i class="fas fa-file-excel me-1"></i> Export
               </button>
               <button v-if="currentRole === 'admin' && checkedIds.length"
-                      class="btn btn-danger fw-bold ms-1"
+                      class="btn btn-sm btn-danger fw-bold px-3"
                       @click="hapusTerpilih">
-                <i class="fas fa-trash-alt me-1"></i>Hapus ({{ checkedIds.length }})
+                <i class="fas fa-trash-alt me-1"></i> Hapus ({{ checkedIds.length }})
               </button>
             </div>
           </div>
         </div>
 
         <div class="modal-body p-0">
-          <div class="table-responsive" style="max-height:50vh;overflow-y:auto">
-            <table class="table table-hover mb-0 align-middle small">
-              <thead class="table-light sticky-top shadow-sm">
+          <div class="table-responsive" style="max-height:50vh; overflow-y:auto;">
+            <table class="table modern-table table-hover align-middle mb-0">
+              <thead class="sticky-top">
                 <tr>
                   <th v-if="currentRole === 'admin'" class="text-center" style="width:40px">
-                    <input type="checkbox" class="form-check-input"
-                           :checked="allChecked"
-                           @change="toggleAll"
-                           title="Pilih Semua">
+                    <input type="checkbox" class="form-check-input" :checked="allChecked" @change="toggleAll">
                   </th>
-                  <th>Kode &amp; Nama Barang</th>
-                  <th>Tipe Transaksi</th>
+                  <th>Barang</th>
+                  <th>Transaksi</th>
                   <th class="text-end">Qty (Kg)</th>
                   <th>Keterangan</th>
                   <th v-if="currentRole === 'admin'" class="text-center">Aksi</th>
@@ -46,88 +49,56 @@
               </thead>
               <tbody>
                 <template v-if="loading">
-                  <tr><td :colspan="currentRole === 'admin' ? 6 : 5" class="text-center py-4">
-                    <div class="spinner-border text-info"></div>
-                  </td></tr>
+                  <tr><td :colspan="currentRole === 'admin' ? 6 : 5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>
                 </template>
                 <template v-else-if="groupedLogs.length">
                   <template v-for="group in groupedLogs" :key="group.tipe + group.ket">
                     <tr :class="tipeRowClass(group.tipe)">
-                      <td :colspan="currentRole === 'admin' ? 6 : 5" class="fw-bold py-2">
-                        <i :class="tipeIcon(group.tipe)" class="me-2"></i>
-                        TRANSAKSI: {{ group.tipe }}
+                      <td :colspan="currentRole === 'admin' ? 6 : 5" class="fw-bold py-2 px-3">
+                        <i :class="tipeIcon(group.tipe)" class="me-2"></i> {{ group.tipe }}
                       </td>
                     </tr>
-                    <tr class="bg-light">
+                    <tr class="group-header">
                       <td v-if="currentRole === 'admin'" class="text-center">
-                        <input type="checkbox" class="form-check-input border-secondary"
-                               :checked="isGroupChecked(group)"
-                               @change="toggleGroup(group, $event)"
-                               title="Pilih semua transaksi di keterangan ini">
+                        <input type="checkbox" class="form-check-input" :checked="isGroupChecked(group)" @change="toggleGroup(group, $event)">
                       </td>
-                      <td :colspan="currentRole === 'admin' ? 5 : 5" class="fw-bold text-secondary py-2 ps-3" style="font-size:.85rem">
-                        <i class="fas fa-tag me-1 text-muted"></i> KETERANGAN: {{ group.ket }}
-                        <span class="badge bg-secondary ms-2" style="font-size:0.65rem">{{ group.rows.length }} item</span>
+                      <td :colspan="currentRole === 'admin' ? 5 : 5" class="fw-bold text-muted ps-3 small">
+                        <i class="fas fa-tag me-1"></i> {{ group.ket }} ({{ group.rows.length }} items)
                       </td>
                     </tr>
-                    <tr v-for="r in group.rows" :key="r.trxId" :class="checkedIds.includes(r.parentId+'|'+r.trxId) ? 'table-danger' : ''">
-                      <td v-if="currentRole === 'admin'" class="text-center">
-                        <input type="checkbox" class="form-check-input"
-                               :value="r.parentId+'|'+r.trxId"
-                               v-model="checkedIds">
-                      </td>
-                      <td class="ps-4">
-                        <div class="fw-bold text-dark" style="line-height:1.1">{{ r.namaBarang }}</div>
-                        <div style="font-size:.7rem" class="text-muted font-monospace">{{ r.kodeErpRef }}</div>
+                    <tr v-for="r in group.rows" :key="r.trxId" :class="checkedIds.includes(r.parentId+'|'+r.trxId) ? 'table-active' : ''">
+                      <td v-if="currentRole === 'admin'" class="text-center"><input type="checkbox" class="form-check-input" :value="r.parentId+'|'+r.trxId" v-model="checkedIds"></td>
+                      <td class="ps-3">
+                        <div class="fw-bold" style="color:var(--text-main)">{{ r.namaBarang }}</div>
+                        <div class="small font-monospace" style="color:var(--text-muted)">{{ r.kodeErpRef }}</div>
                       </td>
                       <td>
-                        <div><span class="badge mb-1" :class="tipeBadgeClass(r.tipe)">{{ r.tipe }}</span></div>
-                        <span v-if="r.blok" class="badge bg-secondary text-white" style="font-size:.65rem">
-                          <i class="fas fa-warehouse me-1"></i> {{ r.blok }}
-                        </span>
+                        <span class="badge-soft" :class="tipeBadgeClass(r.tipe)">{{ r.tipe }}</span>
+                        <div v-if="r.blok" class="small mt-1" style="color:var(--text-muted)"><i class="fas fa-warehouse me-1"></i> {{ r.blok }}</div>
                       </td>
                       <td class="text-end fw-bold">{{ fmt(r.qty) }}</td>
-                      <td>
-                        <span class="badge badge-ket text-uppercase shadow-sm" :class="ketBadgeClass(r.keterangan)">
-                          {{ r.keterangan || '-' }}
-                        </span>
-                      </td>
+                      <td><span class="badge-soft badge-soft-secondary text-uppercase">{{ r.keterangan || '-' }}</span></td>
                       <td v-if="currentRole === 'admin'" class="text-center">
-                        <button class="btn btn-sm btn-link text-warning p-0"
-                                @click="editDariHarian(r)">
-                          <i class="fas fa-pencil-alt"></i>
-                        </button>
+                        <button class="btn btn-sm btn-link text-warning p-0" @click="editDariHarian(r)"><i class="fas fa-pencil-alt"></i></button>
                       </td>
                     </tr>
                   </template>
                 </template>
                 <template v-else>
-                  <tr><td :colspan="currentRole === 'admin' ? 6 : 5" class="text-center py-5 text-muted">
-                    Tidak ada aktivitas pada tanggal ini
-                  </td></tr>
+                  <tr><td :colspan="currentRole === 'admin' ? 6 : 5" class="text-center py-5 text-muted">Data kosong pada tanggal ini.</td></tr>
                 </template>
               </tbody>
             </table>
           </div>
         </div>
 
-        <div class="modal-footer bg-light py-3 d-block border-top">
-          <div class="d-flex flex-wrap gap-2 justify-content-center">
-            <div
-              v-for="(d, ket) in rekapMap" :key="ket"
-              class="card shadow-sm border-0 bg-white p-2 text-center"
-              style="min-width:145px;border-top:4px solid #1e3c72 !important"
-            >
-              <div class="fw-bold mb-1 border-bottom pb-1 text-primary" style="font-size:.75rem">{{ ket }}</div>
-              <div class="d-flex justify-content-between gap-3 px-2">
-                <div class="text-success">
-                  <small style="font-size:.6rem;display:block" class="fw-bold">MASUK</small>
-                  <b>{{ fmt(d.MASUK) }}</b>
-                </div>
-                <div class="text-danger">
-                  <small style="font-size:.6rem;display:block" class="fw-bold">KELUAR</small>
-                  <b>{{ fmt(d.KELUAR) }}</b>
-                </div>
+        <div class="modal-footer bg-main py-4 border-0">
+          <div class="d-flex flex-wrap gap-3 justify-content-center w-100">
+            <div v-for="(d, ket) in rekapMap" :key="ket" class="rekap-box">
+              <div class="rekap-label">{{ ket }}</div>
+              <div class="d-flex gap-3">
+                <div class="text-success"><small class="fw-bold d-block">IN</small><b>{{ fmt(d.MASUK) }}</b></div>
+                <div class="text-danger"><small class="fw-bold d-block">OUT</small><b>{{ fmt(d.KELUAR) }}</b></div>
               </div>
             </div>
           </div>
@@ -164,34 +135,23 @@ const editDariHarian = (r) => {
   emit('close')
 }
 
-// LOGIKA PILIH SEMUA (ALL)
 const allChecked = computed(() => {
   const allIds = logs.value.map(r => r.parentId + '|' + r.trxId)
   return allIds.length > 0 && allIds.every(id => checkedIds.value.includes(id))
 })
 
 const toggleAll = (e) => {
-  if (e.target.checked) {
-    checkedIds.value = logs.value.map(r => r.parentId + '|' + r.trxId)
-  } else {
-    checkedIds.value = []
-  }
+  checkedIds.value = e.target.checked ? logs.value.map(r => r.parentId + '|' + r.trxId) : []
 }
 
-// LOGIKA PILIH PER KETERANGAN (GROUP)
-const isGroupChecked = (group) => {
-  if (!group.rows.length) return false
-  return group.rows.every(r => checkedIds.value.includes(r.parentId + '|' + r.trxId))
-}
+const isGroupChecked = (group) => group.rows.every(r => checkedIds.value.includes(r.parentId + '|' + r.trxId))
 
 const toggleGroup = (group, e) => {
   const ids = group.rows.map(r => r.parentId + '|' + r.trxId)
   if (e.target.checked) {
-    // Tambahin yang belum ada di checkedIds
     const newIds = ids.filter(id => !checkedIds.value.includes(id))
     checkedIds.value.push(...newIds)
   } else {
-    // Buang dari checkedIds
     checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
   }
 }
@@ -208,135 +168,60 @@ const loadData = async () => {
       Object.values(all[pId] || {}).forEach(trx => {
         if (trx.tanggal?.startsWith(tglPicker.value)) {
           const m = dbStok.value.find(x => x.idUnik === pId)
-          result.push({
-            ...trx,
-            namaBarang: m?.nama || 'N/A',
-            kodeErpRef: m?.kodeErp || '-',
-            parentId: pId
-          })
+          result.push({ ...trx, namaBarang: m?.nama || 'N/A', kodeErpRef: m?.kodeErp || '-', parentId: pId })
         }
       })
     })
-    
-    // Sort A-Z berdasarkan Kode ERP (Masih ada sesuai request sebelumnya)
     result.sort((a, b) => (a.kodeErpRef || '').localeCompare(b.kodeErpRef || ''))
-    
     logs.value = result
-  } finally {
-    loading.value = false
-  }
+  } finally { loading.value = false }
 }
 
-// FUNGSI HAPUS BULK & RE-AUDIT
 const hapusTerpilih = async () => {
-  if (!checkedIds.value.length) return
   const result = await window.Swal.fire({
-    title: `Hapus ${checkedIds.value.length} Transaksi?`,
-    text: 'Data akan dihapus permanen dan stok dihitung ulang.',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#dc3545',
-    confirmButtonText: 'Ya, Hapus!'
+    title: `Hapus ${checkedIds.value.length} Data?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc2626'
   })
-  
   if (!result.isConfirmed) return
-
-  window.Swal.fire({
-    title: 'Memproses...',
-    allowOutsideClick: false,
-    didOpen: () => window.Swal.showLoading()
-  })
 
   try {
     const parentIds = new Set()
     const delUpdates = {}
-
     checkedIds.value.forEach(val => {
       const [pId, tId] = val.split('|')
       delUpdates[`riwayat_transaksi/${pId}/${tId}`] = null
       parentIds.add(pId)
     })
-
     await update(dbRef(db), delUpdates)
-
-    const [snapM, snapH] = await Promise.all([
-      get(dbRef(db, 'stok_benang')),
-      get(dbRef(db, 'riwayat_transaksi'))
-    ])
-    
-    const masters = snapM.val() || {}
-    const histories = snapH.val() || {}
-    const auditUp = {}
-
+    const [snapM, snapH] = await Promise.all([get(dbRef(db, 'stok_benang')), get(dbRef(db, 'riwayat_transaksi'))])
+    const masters = snapM.val() || {}, histories = snapH.val() || {}, auditUp = {}
     parentIds.forEach(id => {
       const item = masters[id]
       if (!item) return
       let run = Number(item.stokAwal) || 0
       const bloksAudit = {}
-
-      Object.values(histories[id] || {})
-        .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
-        .forEach(l => {
-          const q = Number(l.qty)
-          const blokNama = l.blok || ''
-          
-          if (l.tipe === 'MASUK') {
-            run += q
-            if (blokNama) bloksAudit[blokNama] = (parseFloat(bloksAudit[blokNama]) || 0) + q
-          } else if (l.tipe === 'KELUAR') {
-            run -= q
-            if (blokNama) bloksAudit[blokNama] = (parseFloat(bloksAudit[blokNama]) || 0) - q
-          } else if (l.tipe === 'OPNAME') {
-            if (blokNama) {
-              const stokBlokLama = parseFloat(bloksAudit[blokNama]) || 0
-              const selisih = q - stokBlokLama
-              run += selisih
-              bloksAudit[blokNama] = q
-            } else {
-              run = q
-            }
-          }
-          
-          run = parseFloat(run.toFixed(2))
-          auditUp[`riwayat_transaksi/${id}/${l.trxId}/stokAkhir`] = run
-        })
-
-      Object.keys(bloksAudit).forEach(b => { 
-        bloksAudit[b] = parseFloat(bloksAudit[b].toFixed(2))
-        if (bloksAudit[b] <= 0) delete bloksAudit[b] 
+      Object.values(histories[id] || {}).sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal)).forEach(l => {
+        const q = Number(l.qty)
+        if (l.tipe === 'MASUK') { run += q; if (l.blok) bloksAudit[l.blok] = (parseFloat(bloksAudit[l.blok]) || 0) + q }
+        else if (l.tipe === 'KELUAR') { run -= q; if (l.blok) bloksAudit[l.blok] = (parseFloat(bloksAudit[l.blok]) || 0) - q }
+        else if (l.tipe === 'OPNAME') { if (l.blok) { run += (q - (parseFloat(bloksAudit[l.blok])||0)); bloksAudit[l.blok] = q } else run = q }
+        auditUp[`riwayat_transaksi/${id}/${l.trxId}/stokAkhir`] = parseFloat(run.toFixed(2))
       })
-
       auditUp[`stok_benang/${id}/stok`] = run
       auditUp[`stok_benang/${id}/bloks`] = Object.keys(bloksAudit).length ? bloksAudit : null
     })
-
-    if (Object.keys(auditUp).length) await update(dbRef(db), auditUp)
-
-    window.Swal.fire('Berhasil!', 'Transaksi dihapus & stok diaudit.', 'success')
-    refreshData()
-    loadData()
-
-  } catch(e) {
-    window.Swal.fire('Error', e.message, 'error')
-  }
+    await update(dbRef(db), auditUp)
+    refreshData(); loadData()
+  } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
-
-const ORDER = ['MASUK', 'KELUAR', 'OPNAME']
 
 const groupedLogs = computed(() => {
   const groups = {}
   logs.value.forEach(r => {
     const key = `${r.tipe}||${(r.keterangan || 'LAIN-LAIN').toUpperCase()}`
-    if (!groups[key]) groups[key] = {
-      tipe: r.tipe,
-      ket: (r.keterangan || 'LAIN-LAIN').toUpperCase(),
-      rows: []
-    }
+    if (!groups[key]) groups[key] = { tipe: r.tipe, ket: (r.keterangan || 'LAIN-LAIN').toUpperCase(), rows: [] }
     groups[key].rows.push(r)
   })
-  return Object.values(groups).sort((a, b) =>
-    ORDER.indexOf(a.tipe) - ORDER.indexOf(b.tipe)
-  )
+  return Object.values(groups).sort((a, b) => ['MASUK','KELUAR','OPNAME'].indexOf(a.tipe) - ['MASUK','KELUAR','OPNAME'].indexOf(b.tipe))
 })
 
 const rekapMap = computed(() => {
@@ -350,61 +235,34 @@ const rekapMap = computed(() => {
   return map
 })
 
-const tipeRowClass = t => ({
-  'bg-success text-white': t === 'MASUK',
-  'bg-danger text-white': t === 'KELUAR',
-  'bg-warning text-dark': t === 'OPNAME'
-})
+const tipeRowClass = t => ({ 'bg-success': t === 'MASUK', 'bg-danger': t === 'KELUAR', 'bg-warning': t === 'OPNAME' })
+const tipeBadgeClass = t => ({ 'badge-soft-primary': t === 'MASUK', 'badge-soft-danger': t === 'KELUAR', 'badge-soft-warning': t === 'OPNAME' })
+const tipeIcon = t => ({ 'MASUK': 'fas fa-arrow-down', 'KELUAR': 'fas fa-arrow-up', 'OPNAME': 'fas fa-check-double' }[t])
 
-const tipeBadgeClass = t => ({
-  'bg-success': t === 'MASUK',
-  'bg-danger': t === 'KELUAR',
-  'bg-warning text-dark': t === 'OPNAME'
-})
-
-const tipeIcon = t => ({
-  'MASUK': 'fas fa-arrow-down',
-  'KELUAR': 'fas fa-arrow-up',
-  'OPNAME': 'fas fa-exchange-alt'
-}[t])
-
-const ketBadgeClass = ket => {
-  const t = (ket || '').toUpperCase()
-  if (t.includes('AJL')) return 'bg-primary'
-  if (t.includes('WARPING')) return 'bg-danger'
-  if (t.includes('WEAVING')) return 'bg-warning text-dark'
-  if (t.includes('KELOS')) return 'bg-success'
-  return 'bg-secondary'
-}
-
-// EXPORT EXCEL (Sudah ada BLOK LOKASI)
 const exportExcel = () => {
   if (!logs.value.length) return
-  const rows = [
-    ['REKAPITULASI TRANSAKSI HARIAN', `Tanggal: ${tglPicker.value}`],
-    [],
-    ['TANGGAL', 'JAM', 'KODE ERP', 'NAMA BARANG', 'TIPE', 'BLOK LOKASI', 'QTY (KG)', 'KETERANGAN'],
-    ...logs.value.map(l => [
-      new Date(l.tanggal).toLocaleDateString('id-ID'),
-      new Date(l.tanggal).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-      l.kodeErpRef, l.namaBarang, l.tipe, (l.blok || '-').toUpperCase(), l.qty, l.keterangan
-    ])
-  ]
-  const ws = window.XLSX.utils.aoa_to_sheet(rows)
-  ws['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 20 }, { wch: 30 }, { wch: 10 }, { wch: 15 }, { wch: 10 }, { wch: 25 }]
-  const wb = window.XLSX.utils.book_new()
-  window.XLSX.utils.book_append_sheet(wb, ws, 'Rekap_Harian')
-  window.XLSX.writeFile(wb, `Rekap_Gudang_${tglPicker.value}.xlsx`)
+  const rows = [['REKAPITULASI TRANSAKSI HARIAN', `Tanggal: ${tglPicker.value}`], [], ['TANGGAL', 'JAM', 'KODE ERP', 'NAMA BARANG', 'TIPE', 'BLOK', 'QTY (KG)', 'KETERANGAN'], ...logs.value.map(l => [new Date(l.tanggal).toLocaleDateString('id-ID'), new Date(l.tanggal).toLocaleTimeString('id-ID'), l.kodeErpRef, l.namaBarang, l.tipe, (l.blok || '-').toUpperCase(), l.qty, l.keterangan])]
+  const ws = window.XLSX.utils.aoa_to_sheet(rows), wb = window.XLSX.utils.book_new()
+  window.XLSX.utils.book_append_sheet(wb, ws, 'Rekap_Harian'); window.XLSX.writeFile(wb, `Rekap_${tglPicker.value}.xlsx`)
 }
 
 onMounted(() => loadData())
-defineExpose({ loadData })
 </script>
 
 <style scoped>
-.badge-ket {
-  font-size: .75rem; padding: 5px 8px;
-  border-radius: 6px; font-weight: 600;
-  white-space: normal; text-align: left; line-height: 1.2;
-}
+.modern-modal { border-radius: 24px; background: var(--bg-card); }
+.backdrop-blur { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
+.icon-circle { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.bg-info-subtle { background: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+.modern-table th { background: var(--bg-main); color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; padding: 12px; }
+.modern-table td { color: var(--text-main); }
+.group-header { background: var(--bg-main); }
+.badge-soft { font-size: 0.7rem; padding: 3px 8px; border-radius: 6px; font-weight: 700; }
+.badge-soft-primary { background: rgba(79, 70, 229, 0.1); color: #818cf8; }
+.badge-soft-danger { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+.badge-soft-warning { background: rgba(245, 158, 11, 0.1); color: #fbbf24; }
+.badge-soft-secondary { background: var(--bg-main); color: var(--text-muted); }
+.rekap-box { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; }
+.rekap-label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+.btn-close-custom { background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2364748b'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat; opacity: 0.5; }
 </style>
