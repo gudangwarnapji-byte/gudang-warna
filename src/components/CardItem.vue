@@ -1,72 +1,76 @@
 <template>
   <div class="col-12 col-md-6 col-lg-4">
-    <div class="card-item shadow-sm p-3" :style="{ background: isCritical ? '#fff0f0' : '#fff' }">
+    <div class="card-item p-4" :class="isCritical ? 'card-critical' : 'card-normal'">
 
-      <div class="d-flex justify-content-between mb-2">
-        <h5 class="fw-bold text-primary m-0 text-truncate" style="letter-spacing:-.5px">
+      <div class="d-flex justify-content-between mb-3 align-items-start">
+        <h5 class="fw-bold m-0 text-truncate item-title" style="letter-spacing:-0.5px">
           {{ item.nama }}
         </h5>
-        <div class="d-flex align-items-center gap-1">
-          <span :class="['badge', jenisBadgeColor, 'badge-custom']">{{ item.jenis }}</span>
-          <span class="badge bg-warning text-dark badge-custom fw-bold">{{ item.grade || '-' }}</span>
+        <div class="d-flex align-items-center gap-1 flex-wrap justify-content-end">
+          <span :class="['badge-soft', jenisBadgeColor]">{{ item.jenis }}</span>
+          <span class="badge-soft badge-soft-warning fw-bold">{{ item.grade || '-' }}</span>
           <span v-if="velocity" v-html="velocityBadge"></span>
         </div>
       </div>
 
-      <div class="mb-3">
-        <small class="text-muted d-block mb-2">
-          {{ item.warna }} | <b>{{ item.kodeErp }}</b>
-        </small>
+      <div class="mb-4">
+        <div class="d-flex align-items-center mb-3">
+          <span class="item-meta">{{ item.warna }}</span>
+          <span class="mx-2 text-muted" style="font-size: 0.8rem;">•</span>
+          <span class="item-meta fw-bold font-monospace">{{ item.kodeErp }}</span>
+        </div>
         
-        <div class="d-flex flex-wrap gap-2 mt-1">
+        <div class="d-flex flex-wrap gap-2">
           <template v-if="daftarBlok.length || sisaTanpaBlok > 0">
             <div v-for="b in daftarBlok" :key="b.nama" class="blok-pill">
-              <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
-              {{ b.nama }} <span class="ms-1 fw-bold opacity-75">({{ fmt(b.qty) }})</span>
+              <i class="fas fa-warehouse me-1 opacity-50"></i>
+              {{ b.nama }} <span class="ms-1 fw-bold">({{ fmt(b.qty) }})</span>
             </div>
             
             <div v-if="sisaTanpaBlok > 0" class="blok-pill-warning">
-              <i class="fas fa-map-marker-alt me-1" style="font-size:.7rem"></i>
+              <i class="fas fa-map-marker-alt me-1 opacity-50"></i>
               Tanpa Lokasi <span class="ms-1 fw-bold">({{ fmt(sisaTanpaBlok) }})</span>
             </div>
           </template>
           
           <template v-else>
             <div class="blok-pill-empty">
-              <i class="fas fa-warehouse me-1" style="font-size:.7rem"></i>
-              Belum ada blok terdaftar
+              <i class="fas fa-box-open me-1 opacity-50"></i>
+              Belum ada stok fisik
             </div>
           </template>
         </div>
       </div>
 
-      <div class="stok-box mb-3" :class="isCritical ? 'stok-kritis' : 'stok-aman'">
-        <div class="stok-lbl">
-          <i class="fas fa-cubes me-1"></i> TOTAL STOK
-        </div>
+      <div class="stok-box mb-4" :class="isCritical ? 'stok-box-kritis' : 'stok-box-aman'">
+        <div class="stok-lbl">TOTAL STOK TERSEDIA</div>
         <div class="stok-val">
           {{ fmt(item.stok) }} <span class="stok-unit">Kg</span>
         </div>
       </div>
 
-      <div v-if="role === 'admin'" class="d-flex gap-1">
-        <button class="btn btn-outline-success flex-grow-1 fw-bold"
-                @click="$emit('transaksi', 'MASUK', item)">Masuk</button>
-        <button class="btn btn-outline-danger flex-grow-1 fw-bold"
-                @click="$emit('transaksi', 'KELUAR', item)">Keluar</button>
-        <button class="btn btn-light border shadow-sm"
-                @click="$emit('riwayat', item.idUnik)">
-          <i class="fas fa-history"></i>
+      <div v-if="role === 'admin'" class="d-flex gap-2">
+        <button class="btn btn-action btn-in flex-grow-1"
+                @click="$emit('transaksi', 'MASUK', item)">
+          <i class="fas fa-arrow-down me-1"></i> Masuk
         </button>
-        <button class="btn btn-warning border text-dark shadow-sm"
+        <button class="btn btn-action btn-out flex-grow-1"
+                @click="$emit('transaksi', 'KELUAR', item)">
+          <i class="fas fa-arrow-up me-1"></i> Keluar
+        </button>
+        <button class="btn btn-action btn-light-action border" title="Riwayat"
+                @click="$emit('riwayat', item.idUnik)">
+          <i class="fas fa-history text-secondary"></i>
+        </button>
+        <button class="btn btn-action btn-audit-action" title="Opname"
                 @click="$emit('transaksi', 'OPNAME', item)">
           <i class="fas fa-check-double"></i>
         </button>
       </div>
       <div v-else class="d-grid">
-        <button class="btn btn-light border fw-bold shadow-sm"
+        <button class="btn btn-action btn-light-action border w-100 d-flex justify-content-center align-items-center"
                 @click="$emit('riwayat', item.idUnik)">
-          <i class="fas fa-history me-2 text-primary"></i>Riwayat
+          <i class="fas fa-history me-2 text-primary"></i> Lihat Riwayat
         </button>
       </div>
 
@@ -94,106 +98,129 @@ const isCritical = computed(() => {
   return s < 5 && s !== 0
 })
 
+// MENGUBAH KELAS UNTUK BADGE SOFT PALETTE
 const jenisBadgeColor = computed(() => {
   const t = (props.item.jenis || '').toUpperCase()
-  if (t.includes('AJL'))     return 'bg-primary'
-  if (t.includes('WARPING')) return 'bg-danger'
-  if (t.includes('WEAVING')) return 'bg-warning text-dark'
-  if (t.includes('KELOS'))   return 'bg-success'
-  return 'bg-secondary'
+  if (t.includes('AJL'))     return 'badge-soft-primary'
+  if (t.includes('WARPING')) return 'badge-soft-danger'
+  if (t.includes('WEAVING')) return 'badge-soft-warning'
+  if (t.includes('KELOS'))   return 'badge-soft-success'
+  return 'badge-soft-secondary'
 })
 
 const velocityBadge = computed(() => {
   const v = props.velocity
-  if (v === 'FAST')   return '<span class="badge bg-danger badge-custom ms-1 fw-bold"><i class="fas fa-fire me-1"></i>FAST</span>'
-  if (v === 'MEDIUM') return '<span class="badge bg-success badge-custom ms-1 fw-bold">MEDIUM</span>'
-  if (v === 'SLOW')   return '<span class="badge bg-warning text-dark badge-custom ms-1 fw-bold">SLOW</span>'
-  return '<span class="badge bg-secondary badge-custom ms-1 fw-bold">DEAD</span>'
+  if (v === 'FAST')   return '<span class="badge-soft badge-soft-danger ms-1 fw-bold"><i class="fas fa-fire me-1"></i>FAST</span>'
+  if (v === 'MEDIUM') return '<span class="badge-soft badge-soft-success ms-1 fw-bold">MEDIUM</span>'
+  if (v === 'SLOW')   return '<span class="badge-soft badge-soft-warning ms-1 fw-bold">SLOW</span>'
+  return '<span class="badge-soft badge-soft-secondary ms-1 fw-bold">DEAD</span>'
 })
 
-// LOGIKA BARU: Filter blok, pisahkan yang bernama "Tanpa Lokasi"
+// LOGIKA FILTER BLOK TETAP SAMA (AMAN!)
 const daftarBlok = computed(() => {
   const bloks = props.item?.bloks
   if (!bloks) return []
   return Object.entries(bloks)
-    .filter(([nama, qty]) => {
-      // Hilangkan "Tanpa Lokasi" dari daftar biru
-      return parseFloat(qty) > 0 && nama.trim().toUpperCase() !== 'TANPA LOKASI'
-    })
+    .filter(([nama, qty]) => parseFloat(qty) > 0 && nama.trim().toUpperCase() !== 'TANPA LOKASI')
     .map(([nama, qty]) => ({ nama, qty: parseFloat(qty) }))
 })
 
-// LOGIKA BARU: Gabungkan nilai dari database "Tanpa Lokasi" + selisih hantu (jika ada)
+// LOGIKA SISA TANPA LOKASI TETAP SAMA (AMAN!)
 const sisaTanpaBlok = computed(() => {
   const bloks = props.item?.bloks || {}
   let qtyEksplisit = 0
   
-  // 1. Tarik angka yang secara eksplisit ada di key "Tanpa Lokasi"
   Object.entries(bloks).forEach(([nama, qty]) => {
-    if (nama.trim().toUpperCase() === 'TANPA LOKASI') {
-      qtyEksplisit += parseFloat(qty) || 0
-    }
+    if (nama.trim().toUpperCase() === 'TANPA LOKASI') qtyEksplisit += parseFloat(qty) || 0
   })
 
-  // 2. Hitung kalau-kalau ada selisih stok (total stok - semua stok di blok)
   const totalStok = parseFloat(props.item?.stok) || 0
   const semuaStokDiBlok = Object.values(bloks).reduce((s, b) => s + (parseFloat(b) || 0), 0)
   let selisih = totalStok - semuaStokDiBlok
-  if (selisih < 0.01) selisih = 0 // Abaikan sisa desimal error JS
+  if (selisih < 0.01) selisih = 0 
 
   return qtyEksplisit + selisih
 })
 </script>
 
 <style scoped>
+/* FONT MODERN (Opsional, pastikan sudah pasang Google Font di index.html) */
+* { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+
+/* DESAIN KARTU MODERN */
 .card-item {
-  border: none; border-radius: 12px;
-  box-shadow: 0 2px 5px rgba(0,0,0,.05);
-  transition: transform .2s;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease-in-out;
 }
-.card-item:active { transform: scale(.98); }
-.badge-custom { font-size: .75rem; padding: 5px 8px; border-radius: 6px; font-weight: 600; }
+.card-normal {
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+}
+.card-critical {
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.1);
+  border-color: #fecaca;
+  background: #fffcfc;
+}
+.card-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+}
+
+.item-title { color: #0f172a; font-size: 1.15rem; }
+.item-meta { color: #64748b; font-size: 0.85rem; font-weight: 500; }
+
+/* SOFT BADGES */
+.badge-soft {
+  font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; font-weight: 700; display: inline-block;
+}
+.badge-soft-primary { background: #e0e7ff; color: #3730a3; }
+.badge-soft-success { background: #d1fae5; color: #065f46; }
+.badge-soft-danger { background: #fee2e2; color: #991b1b; }
+.badge-soft-warning { background: #fef3c7; color: #92400e; }
+.badge-soft-secondary { background: #f1f5f9; color: #475569; }
+
+/* BLOK PILLS DIBUAT LEBIH HALUS */
 .blok-pill {
-  display: inline-flex; align-items: center;
-  font-size: .75rem; font-weight: 600;
-  padding: 4px 10px; border-radius: 6px;
-  background: #E6F1FB; color: #0C447C;
-  border: 1px solid #B5D4F4;
+  font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 600;
+  background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;
 }
 .blok-pill-warning {
-  display: inline-flex; align-items: center;
-  font-size: .75rem; font-weight: 600;
-  padding: 4px 10px; border-radius: 6px;
-  background: #fff8e1; color: #856404;
-  border: 1px solid #ffeeba;
+  font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 600;
+  background: #fffbeb; color: #b45309; border: 1px solid #fde68a;
 }
 .blok-pill-empty {
-  display: inline-flex; align-items: center;
-  font-size: .75rem; font-weight: 600;
-  padding: 4px 10px; border-radius: 6px;
-  background: #f8f9fa; color: #6c757d;
-  border: 1px dashed #dee2e6;
+  font-size: 0.75rem; padding: 5px 12px; border-radius: 8px; font-weight: 500;
+  background: #f8fafc; color: #94a3b8; border: 1px dashed #cbd5e1;
 }
+
+/* KOTAK STOK (CLEAN & MINIMALIST) */
 .stok-box {
-  display: flex; align-items: center; justify-content: space-between;
-  border-radius: 8px; padding: 10px 14px;
-  border: 1px solid #e9ecef;
+  padding: 12px 16px; border-radius: 12px;
+  display: flex; flex-direction: column; gap: 4px;
 }
-.stok-box.stok-aman {
-  background: #f4fdf8; border-left: 5px solid #198754;
+.stok-box-aman { background: #f8fafc; border-left: 4px solid #10b981; }
+.stok-box-kritis { background: #fef2f2; border-left: 4px solid #ef4444; }
+
+.stok-lbl { font-size: 0.7rem; color: #64748b; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+.stok-val { font-size: 1.8rem; font-weight: 800; color: #0f172a; line-height: 1; letter-spacing: -1px; }
+.stok-box-kritis .stok-val { color: #dc2626; }
+.stok-unit { font-size: 0.9rem; color: #64748b; font-weight: 600; letter-spacing: normal; }
+
+/* TOMBOL AKSI MODERN */
+.btn-action {
+  font-weight: 600; font-size: 0.85rem; padding: 8px 12px; border-radius: 10px;
+  transition: all 0.2s; display: flex; align-items: center; justify-content: center;
 }
-.stok-box.stok-kritis {
-  background: #fff5f5; border-left: 5px solid #dc3545; border-color: #f7c1c1;
-}
-.stok-lbl { 
-  font-size: .75rem; color: #6c757d; font-weight: 700; letter-spacing: .5px;
-}
-.stok-val { 
-  font-size: 1.5rem; font-weight: 800; letter-spacing: -.5px; color: #212529;
-}
-.stok-unit {
-  font-size: .85rem; font-weight: 600; color: #6c757d; margin-left: 2px;
-}
-.stok-kritis .stok-val { color: #dc3545; }
-.text-safe { color: #198754; }
+.btn-in { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+.btn-in:hover { background: #d1fae5; color: #047857; }
+
+.btn-out { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.btn-out:hover { background: #fee2e2; color: #b91c1c; }
+
+.btn-light-action { background: #ffffff; color: #475569; border-color: #e2e8f0; }
+.btn-light-action:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+.btn-audit-action { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.btn-audit-action:hover { background: #fef3c7; color: #b45309; }
 </style>
