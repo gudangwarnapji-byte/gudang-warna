@@ -1,39 +1,52 @@
 <template>
-  <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+  <div class="modal fade show d-block backdrop-blur" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-xl">
-      <div class="modal-content border-0 shadow">
+      <div class="modal-content modern-modal border-0 shadow-lg">
 
-        <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title fw-bold">Input Massal (Smart Paste)</h5>
-          <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
+        <div class="modal-header border-0 pb-0">
+          <div class="d-flex align-items-center gap-2">
+            <div class="icon-circle bg-primary-subtle text-primary">
+              <i class="fas fa-paste"></i>
+            </div>
+            <h5 class="modal-title fw-bold m-0" style="letter-spacing: -0.5px; color: var(--text-main)">
+              Input Massal (Smart Paste)
+            </h5>
+          </div>
+          <button type="button" class="btn-close btn-close-custom" @click="$emit('close')"></button>
         </div>
 
-        <div class="modal-body p-3">
-          <div class="row g-3">
+        <div class="modal-body p-4 pt-3">
+          <div class="row g-4">
 
             <div class="col-12">
-              <label class="small fw-bold text-primary mb-1">1. COPY DATA DARI EXCEL (Tanpa Header)</label>
+              <label class="fw-bold mb-2 section-label">
+                <span class="step-num">1</span> COPY DATA DARI EXCEL (Tanpa Header)
+              </label>
               <textarea
-                class="form-control font-monospace"
+                class="form-control custom-textarea font-monospace"
                 rows="3"
-                placeholder="Format: [Teks Mentah Nama/Kode]  [Qty]"
-                style="border:2px dashed #ccc;background:#f0f8ff;font-size:.85rem;min-height:80px;resize:vertical;padding:15px"
+                placeholder="Format: [Kode/Nama Barang]  [Qty]"
                 @paste="handlePaste"
               ></textarea>
-              <div class="form-text small text-muted">Paste data 2 Kolom (Item &amp; Qty).</div>
+              <div class="form-text small fw-medium mt-2" style="color: var(--text-muted)">
+                <i class="fas fa-info-circle me-1"></i> Paste data 2 Kolom langsung ke kotak di atas.
+              </div>
             </div>
 
-            <div class="col-12 border-top pt-3">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="small fw-bold text-dark m-0">2. PENGATURAN UMUM</label>
-                <button class="btn btn-sm btn-warning fw-bold text-dark shadow-sm" @click="addEmptyRow">
-                  <i class="fas fa-plus me-1"></i> Baris Manual
+            <div class="col-12 border-top-custom pt-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <label class="fw-bold m-0 section-label">
+                  <span class="step-num">2</span> PENGATURAN UMUM TRANSAKSI
+                </label>
+                <button class="btn btn-sm btn-action btn-light-action px-3" style="width:auto; border-radius: 8px;" @click="addEmptyRow">
+                  <i class="fas fa-plus me-1 text-primary"></i> Baris Manual
                 </button>
               </div>
               
               <div class="row g-3">
                 <div class="col-md-2 col-6">
-                  <select class="form-select form-select-sm fw-bold border-primary" v-model="globalTipe">
+                  <label class="form-label mb-1">Tipe</label>
+                  <select class="form-select form-select-sm fw-bold custom-input" v-model="globalTipe">
                     <option value="MASUK">IN (Masuk)</option>
                     <option value="KELUAR">OUT (Keluar)</option>
                     <option value="OPNAME">ADJ (Opname)</option>
@@ -41,47 +54,47 @@
                 </div>
                 
                 <div class="col-md-3 col-6">
-                  <input type="datetime-local" class="form-control form-control-sm fw-bold" v-model="globalDateTime">
+                  <label class="form-label mb-1">Tanggal & Waktu</label>
+                  <input type="datetime-local" class="form-control form-control-sm fw-bold custom-input" v-model="globalDateTime">
                 </div>
                 
                 <div class="col-md-4 col-12">
-                  <input type="text" class="form-control form-control-sm text-uppercase"
-                         v-model="globalKet" placeholder="KETERANGAN UMUM">
+                  <label class="form-label mb-1">Keterangan (Opsional)</label>
+                  <input type="text" class="form-control form-control-sm text-uppercase custom-input"
+                         v-model="globalKet" placeholder="Ketik keterangan...">
                 </div>
                 
                 <div class="col-md-3 col-12">
-                  <select class="form-select form-select-sm fw-bold border-success" v-model="globalBlok">
+                  <label class="form-label mb-1">Tujuan Blok</label>
+                  <select class="form-select form-select-sm fw-bold custom-input" v-model="globalBlok">
                     <option value="">-- Bebas / Tanpa Lokasi --</option>
-                    <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
-                      {{ b.nama }}
-                    </option>
+                    <option v-for="b in masterBlok" :key="b.id" :value="b.nama">{{ b.nama }}</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            <div class="col-12 mt-4">
-              <div class="table-responsive" style="max-height:400px;border:1px solid #eee;border-radius:8px">
-                <table class="table table-sm table-bordered align-middle mb-0">
-                  <thead class="table-light sticky-top text-center">
+            <div class="col-12 mt-2">
+              <div class="table-container shadow-sm">
+                <table class="table modern-table mb-0">
+                  <thead class="sticky-top">
                     <tr>
                       <th style="width:4%">#</th>
-                      <th style="width:36%">KODE / NAMA</th>
+                      <th style="width:36%">KODE / NAMA BARANG</th>
                       <th style="width:12%">WARNA</th>
                       <th style="width:15%">BLOK (OPSIONAL)</th>
                       <th style="width:13%">QTY (KG)</th>
                       <th style="width:15%">PREVIEW SALDO</th>
-                      <th style="width:5%">X</th>
+                      <th style="width:5%" class="text-center">X</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(row, idx) in rows" :key="idx"
-                        :class="row.itemId ? '' : 'table-warning'">
-                      <td class="text-center fw-bold text-muted">{{ idx + 1 }}</td>
+                    <tr v-for="(row, idx) in rows" :key="idx" :class="row.itemId ? '' : 'row-warning'">
+                      <td class="text-center fw-bold" style="color:var(--text-muted)">{{ idx + 1 }}</td>
 
                       <td style="position:relative">
                         <input
-                          class="form-control form-control-sm fw-bold"
+                          class="form-control form-control-sm fw-bold custom-input table-input"
                           v-model="row.rawKey"
                           placeholder="Ketik/Paste Teks..."
                           autocomplete="off"
@@ -93,12 +106,11 @@
                           @keydown.enter.prevent="pilihSuggestion(idx)"
                           @keydown.escape="activeDrop = -1"
                         >
-                        <div v-if="activeDrop === idx && suggestions[idx]?.length"
-                             class="ac-dropdown">
+                        <div v-if="activeDrop === idx && suggestions[idx]?.length" class="ac-dropdown-new">
                           <div
                             v-for="(sug, si) in suggestions[idx]"
                             :key="sug.idUnik"
-                            :class="['ac-item', highlightIdx[idx] === si ? 'ac-active' : '']"
+                            :class="['ac-item-new', highlightIdx[idx] === si ? 'ac-active' : '']"
                             @mousedown.prevent="pilihItem(row, idx, sug)"
                           >
                             <span class="ac-kode">{{ sug.kodeErp }}</span>
@@ -109,20 +121,17 @@
                             <span class="ac-stok ms-auto">{{ fmt(sug.stok) }} Kg</span>
                           </div>
                         </div>
-                        <div class="small mt-1"
-                             :class="row.itemId ? 'text-success' : 'text-danger'">
+                        <div class="status-indicator mt-1" :class="row.itemId ? 'text-success' : 'text-danger'">
                           <i :class="row.itemId ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
                           {{ row.itemId ? `Cocok: ${row.kodeErp}` : 'Tidak ditemukan' }}
                         </div>
                       </td>
 
-                      <td class="text-center small text-muted fw-bold">{{ row.warna || '-' }}</td>
+                      <td class="text-center small fw-bold" style="color:var(--text-muted)">{{ row.warna || '-' }}</td>
 
                       <td>
-                        <select class="form-select form-select-sm fw-bold"
-                                v-model="row.blok">
+                        <select class="form-select form-select-sm fw-bold custom-input table-input py-0 px-2" style="height: 28px;" v-model="row.blok">
                           <option value="">- Tanpa Lokasi -</option>
-                          
                           <template v-if="(globalTipe === 'KELUAR' || globalTipe === 'OPNAME') && row.itemId">
                             <option v-for="(stokBlok, blokNama) in getItemBloks(row.itemId)"
                                     :key="'saran-'+blokNama" :value="blokNama">
@@ -130,7 +139,6 @@
                             </option>
                             <option disabled>────────────────</option>
                           </template>
-                          
                           <option v-for="b in masterBlok" :key="b.id" :value="b.nama">
                             {{ b.nama }}
                           </option>
@@ -139,27 +147,26 @@
 
                       <td>
                         <input type="number" step="any"
-                               class="form-control form-control-sm text-center fw-bold border-primary"
+                               class="form-control form-control-sm text-center fw-bold custom-input table-input py-0"
+                               style="height: 28px;"
                                v-model="row.qty">
                       </td>
 
                       <td class="text-center small">
-                        <span v-if="row.itemId && row.qty">
-                          <span class="text-muted" style="font-size: 0.7rem;">
-                            {{ row.blok ? 'Blok: ' : 'Ttl: ' }}{{ fmt(getSaldoAwal(row)) }}
+                        <div v-if="row.itemId && row.qty" class="d-flex align-items-center justify-content-center gap-1">
+                          <span style="color:var(--text-muted); font-size: 0.7rem;">
+                            {{ fmt(getSaldoAwal(row)) }}
                           </span>
-                          <i class="fas fa-arrow-right text-muted mx-1" style="font-size:.65rem"></i>
-                          
+                          <i class="fas fa-arrow-right opacity-50" style="font-size:.65rem; color:var(--text-muted)"></i>
                           <span :class="previewSaldo(row) < 0 ? 'text-danger fw-bold' : previewColor" class="fw-bold fs-6">
                             {{ fmt(previewSaldo(row)) }}
                           </span>
-                        </span>
-                        <span v-else class="text-muted">-</span>
+                        </div>
+                        <span v-else style="color:var(--text-muted)">-</span>
                       </td>
 
                       <td class="text-center">
-                        <button class="btn btn-sm text-danger"
-                                @click="rows.splice(idx, 1)">
+                        <button class="btn btn-sm btn-icon-delete" @click="rows.splice(idx, 1)">
                           <i class="fas fa-times"></i>
                         </button>
                       </td>
@@ -167,20 +174,32 @@
                   </tbody>
                 </table>
               </div>
-              <div class="d-flex justify-content-end gap-3 mt-2">
-                <span class="fw-bold text-muted small">{{ validCount }} Item Valid</span>
-                <span class="fw-bold text-primary small">Total: {{ fmt(totalQty) }} Kg</span>
+              
+              <div class="d-flex justify-content-between align-items-center mt-3 p-3 rounded" style="background: var(--bg-main); border: 1px dashed var(--border-color);">
+                <div class="fw-bold d-flex align-items-center gap-2">
+                  <div class="icon-circle bg-success-subtle text-success" style="width:28px; height:28px; font-size:0.8rem;">
+                    <i class="fas fa-check"></i>
+                  </div>
+                  <span style="color:var(--text-main)">{{ validCount }} Item Valid</span>
+                </div>
+                <div class="fw-bold fs-5" style="color:var(--text-main)">
+                  <span style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">TOTAL BERAT: </span>
+                  <span class="text-primary">{{ fmt(totalQty) }}</span> <small style="font-size:60%; opacity:0.8;">Kg</small>
+                </div>
               </div>
             </div>
 
           </div>
         </div>
 
-        <div class="modal-footer bg-light">
-          <button class="btn btn-lg btn-success fw-bold w-100 shadow"
+        <div class="modal-footer border-0 p-4 pt-2">
+          <button class="btn btn-lg fw-bold w-100 shadow-sm submit-btn"
+                  :class="globalTipe === 'MASUK' ? 'btn-in-submit' : globalTipe === 'KELUAR' ? 'btn-out-submit' : 'btn-opname-submit'"
                   :disabled="!validCount || submitting"
                   @click="submit">
-            {{ submitting ? 'Memproses...' : 'PROSES SEKARANG' }}
+            <i v-if="submitting" class="fas fa-circle-notch fa-spin me-2"></i>
+            <i v-else class="fas fa-rocket me-2"></i>
+            {{ submitting ? 'Memproses Data...' : 'PROSES ' + validCount + ' ITEM SEKARANG' }}
           </button>
         </div>
 
@@ -223,11 +242,9 @@ const fmt = n => Number(n || 0).toLocaleString('id-ID', {
   minimumFractionDigits: 2, maximumFractionDigits: 2
 })
 
-// === PERBAIKAN LOGIKA MULTI-BLOK & TANPA LOKASI ===
 const getItemBloks = (itemId) => {
   const item = dbStok.value.find(x => x.idUnik === itemId)
   if (!item?.bloks) return {}
-  // Filter blok yang saldonya > 0
   const activeBloks = {}
   Object.entries(item.bloks).forEach(([k, v]) => {
     if (parseFloat(v) > 0) activeBloks[k] = parseFloat(v)
@@ -238,12 +255,9 @@ const getItemBloks = (itemId) => {
 const getSaldoAwal = (row) => {
   const item = dbStok.value.find(x => x.idUnik === row.itemId)
   if (!item) return 0
-  
-  // Jika milih Blok, kasih tau saldo di Blok tersebut
   if (row.blok) {
     return parseFloat(item.bloks?.[row.blok] || 0)
   }
-  // Jika Tanpa Lokasi, kasih tau saldo Total Keseluruhan
   return parseFloat(item.stok || 0)
 }
 
@@ -261,7 +275,6 @@ const previewSaldo = (row) => {
   if (globalTipe.value === 'OPNAME') return q
   return s
 }
-// ==================================================
 
 const validCount = computed(() =>
   rows.value.filter(r => r.itemId && parseFloat(r.qty) > 0).length
@@ -380,7 +393,7 @@ const submit = async () => {
     html: `Tipe: <b>${globalTipe.value}</b><br>Total: <b>${fmt(totalQty.value)} Kg</b>`,
     icon: 'question',
     showCancelButton: true,
-    confirmButtonColor: '#198754',
+    confirmButtonColor: '#4f46e5',
     confirmButtonText: 'Ya, Proses!'
   })
   if (!confirm.isConfirmed) return
@@ -432,7 +445,6 @@ const submit = async () => {
 
       currentStok = parseFloat(currentStok.toFixed(2))
 
-      // Bersihkan blok jika stoknya habis / di bawah nol
       if (blokNama && bloks[blokNama] <= 0) {
         delete bloks[blokNama]
       }
@@ -471,24 +483,86 @@ const submit = async () => {
 </script>
 
 <style scoped>
-.ac-dropdown {
-  position: absolute; top: calc(100% - 22px);
-  left: 0; right: 0; background: #fff;
-  border: 1.5px solid #0d6efd; border-top: none;
-  border-radius: 0 0 8px 8px; z-index: 9999;
-  max-height: 220px; overflow-y: auto;
-  box-shadow: 0 6px 16px rgba(0,0,0,.12);
+.backdrop-blur { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
+
+.modern-modal {
+  border-radius: 24px; background: var(--bg-main); overflow: hidden;
 }
-.ac-item {
-  padding: 7px 10px; cursor: pointer; font-size: .82rem;
-  border-bottom: 1px solid #f0f0f0; display: flex;
-  align-items: center; gap: 5px; transition: background .1s;
+
+.icon-circle {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
 }
-.ac-item:last-child { border-bottom: none; }
-.ac-item:hover, .ac-active { background: #e7f1ff; }
-.ac-kode  { font-weight: 700; color: #1e3c72; min-width: 120px; font-family: monospace; }
-.ac-nama  { color: #333; flex: 1; font-size: .78rem; }
-.ac-sep   { color: #aaa; }
-.ac-warna { color: #6c757d; font-size: .78rem; }
-.ac-stok  { font-weight: 700; color: #198754; font-size: .78rem; white-space: nowrap; }
+
+.bg-primary-subtle { background: rgba(79, 70, 229, 0.1); }
+.text-primary { color: #4f46e5 !important; }
+.bg-success-subtle { background: rgba(16, 185, 129, 0.1); }
+.text-success { color: #10b981 !important; }
+
+.btn-close-custom {
+  background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2364748b'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+  border: none; width: 32px; height: 32px; opacity: 0.5; transition: opacity 0.2s; cursor:pointer;
+}
+.btn-close-custom:hover { opacity: 1; }
+
+.section-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.step-num { 
+  display:inline-block; width: 20px; height: 20px; line-height: 20px; text-align: center;
+  background: #4f46e5; color: white; border-radius: 50%; font-size: 0.7rem; margin-right: 4px;
+}
+
+.custom-textarea {
+  background: var(--bg-card); color: var(--text-main);
+  border: 2px dashed var(--border-color); border-radius: 12px;
+  padding: 16px; font-size: 0.85rem; min-height: 100px; resize: vertical; transition: all 0.3s;
+}
+.custom-textarea:focus { border-color: #818cf8; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); outline: none; }
+.custom-textarea::placeholder { color: var(--text-muted); opacity: 0.5; }
+
+.border-top-custom { border-top: 1px dashed var(--border-color); }
+.form-label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
+
+.custom-input {
+  background: var(--bg-card); color: var(--text-main);
+  border: 1px solid var(--border-color); border-radius: 8px;
+}
+.custom-input:focus { border-color: #818cf8; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); outline: none; }
+.custom-addon { background: var(--bg-main); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+.table-container { border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); }
+.modern-table th { background: var(--bg-main); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border-color); padding: 12px 8px; }
+.modern-table td { background: var(--bg-card); border-bottom: 1px solid var(--border-color); vertical-align: middle; padding: 8px;}
+.row-warning td { background: rgba(245, 158, 11, 0.05); }
+
+.table-input { border-color: transparent; background: transparent; padding: 4px; }
+.table-input:focus { border-color: #818cf8; background: var(--bg-main); }
+
+.btn-icon-delete { color: var(--text-muted); transition: color 0.2s; }
+.btn-icon-delete:hover { color: #ef4444; }
+
+.status-indicator { font-size: 0.65rem; font-weight: 600; }
+
+.ac-dropdown-new {
+  position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+  background: var(--bg-card); border: 1px solid #818cf8;
+  border-radius: 8px; z-index: 1050; max-height: 200px; overflow-y: auto;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+.ac-item-new {
+  padding: 8px 12px; cursor: pointer; font-size: 0.8rem;
+  border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px;
+}
+.ac-item-new:last-child { border-bottom: none; }
+.ac-item-new:hover, .ac-active { background: var(--bg-main); }
+.ac-kode  { font-weight: 700; color: #4f46e5; min-width: 100px; font-family: monospace; }
+.ac-nama  { color: var(--text-main); flex: 1; font-size: .75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.ac-sep   { color: var(--text-muted); opacity: 0.5; }
+.ac-warna { color: var(--text-muted); font-size: .75rem; }
+.ac-stok  { font-weight: 700; color: #10b981; font-size: .75rem; white-space: nowrap; }
+
+.submit-btn { border-radius: 14px; padding: 16px; font-size: 1rem; color: #fff; border: none; transition: transform 0.2s;}
+.submit-btn:hover:not(:disabled) { transform: translateY(-2px); }
+.btn-in-submit { background: linear-gradient(135deg, #10b981, #059669); }
+.btn-out-submit { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.btn-opname-submit { background: linear-gradient(135deg, #f59e0b, #d97706); }
 </style>
