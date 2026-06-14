@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="isOffline" class="offline-badge">
+    <div v-if="isOffline" class="offline-badge shadow-sm">
       <i class="fas fa-wifi-slash me-2"></i>
       KONEKSI TERPUTUS - Data akan disinkronkan otomatis saat sinyal kembali.
     </div>
@@ -8,15 +8,16 @@
     <LoginView v-if="!authReady || !currentUser" />
 
     <div v-else-if="loading" class="loading-overlay">
-      <div class="spinner-border text-primary mb-3"></div>
-      <h5 class="fw-bold text-primary">Sinkronisasi Data...</h5>
+      <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+      <h5 class="fw-bold text-primary" style="letter-spacing: -0.5px;">Sinkronisasi Data...</h5>
+      <p class="text-muted small">Menghubungkan ke Gudang Warna</p>
     </div>
 
     <template v-else>
       <NavBar />
-      <div class="container">
+      <div class="container pb-5">
         <StickySearch />
-        <div class="row g-3 mt-1">
+        <div class="row g-4 mt-2">
           <CardItem
             v-for="item in visibleItems"
             :key="item.idUnik"
@@ -27,10 +28,14 @@
             @riwayat="onRiwayat"
           />
         </div>
-        <div v-if="!filteredItems.length" class="text-center py-5 text-muted">
-          <h5>Data Kosong / Tidak Ditemukan</h5>
+        
+        <div v-if="!filteredItems.length" class="empty-state">
+          <div class="empty-icon"><i class="fas fa-box-open"></i></div>
+          <h4 class="fw-bold mt-3">Data Tidak Ditemukan</h4>
+          <p class="text-muted">Coba gunakan kata kunci atau filter yang berbeda.</p>
         </div>
       </div>
+
       <TransModal v-if="showTransModal" @close="activeTrans = null" />
       <HistDrawer v-show="showHistDrawer" ref="histDrawerRef" @close="activeHistId = ''" />
       <DailyModal v-if="showDailyModal" ref="dailyModalRef" @close="showDailyModal = false" />
@@ -137,17 +142,70 @@ onUnmounted(() => {
 </script>
 
 <style>
-:root { --primary: #1e3c72; --secondary: #2a5298; --bg: #f4f6f9; }
-body { background: var(--bg); font-family: 'Inter', sans-serif; padding-bottom: 80px; }
+/* =========================================================
+   GLOBAL CSS VARIABLES (THEME BUNGLON / DARK MODE)
+   ========================================================= */
+
+/* WAKTU SIANG (LIGHT MODE - DEFAULT) */
+:root {
+  --bg-main: #F8FAFC;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  
+  --nav-bg: rgba(255, 255, 255, 0.9);
+  --nav-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+/* WAKTU MALAM (DARK MODE) */
+[data-theme="dark"] {
+  --bg-main: #0f172a;       /* Biru Dongker Gelap */
+  --bg-card: #1e293b;       /* Slate 800 (Warna Kartu Gelap) */
+  --text-main: #f8fafc;     /* Putih Terang */
+  --text-muted: #94a3b8;    /* Abu-abu redup */
+  --border-color: #334155;  /* Border gelap */
+  
+  --nav-bg: rgba(30, 41, 59, 0.9);
+  --nav-border: rgba(51, 65, 85, 0.5);
+  --glass-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+}
+
+/* =========================================================
+   BASE STYLES
+   ========================================================= */
+body { 
+  background-color: var(--bg-main) !important; 
+  color: var(--text-main) !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; 
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+}
+
+/* OFFLINE BADGE */
 .offline-badge {
   position: fixed; top: 0; left: 0; width: 100%;
-  background: #dc3545; color: #fff; text-align: center;
-  padding: 5px; font-size: .75rem; font-weight: 700;
-  z-index: 11000;
+  background: #ef4444; color: #fff; text-align: center;
+  padding: 8px; font-size: 0.8rem; font-weight: 700;
+  z-index: 11000; letter-spacing: 0.5px;
 }
+
+/* LOADING OVERLAY MODERN */
 .loading-overlay {
-  position: fixed; inset: 0; background: rgba(255,255,255,.98);
+  position: fixed; inset: 0; 
+  background: var(--bg-main); 
   z-index: 9999; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+/* EMPTY STATE */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px 20px; text-align: center; color: var(--text-main);
+}
+.empty-icon {
+  font-size: 4rem; color: var(--border-color); margin-bottom: 20px;
 }
 </style>
