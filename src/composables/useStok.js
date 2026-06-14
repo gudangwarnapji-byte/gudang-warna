@@ -29,7 +29,7 @@ export function useStok() {
     })
   }
 
-  // === ENGINE AUDIT: KIAMAT GLOBAL ===
+  // === ENGINE AUDIT: MATEMATIKA MURNI (TANPA KIAMAT) ===
   const jalankanAudit = async () => {
     if (isAuditing) return
     isAuditing = true
@@ -50,14 +50,16 @@ export function useStok() {
         logs.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal))
 
         const bloksTemp = {}
+        
+        // KUNCI JAWABAN: Masukkan Stok Awal ke wadah Tanpa Lokasi agar selisih Opname bisa dihitung sistem!
+        if (totalStok !== 0) {
+          bloksTemp["Tanpa Lokasi"] = totalStok
+        }
 
         logs.forEach(l => {
           const q = Number(l.qty) || 0
-          
-          // DETEKSI GLOBAL: Kalau kosong ATAU tertulis "Tanpa Lokasi", itu artinya GLOBAL!
           const rawBlok = (l.blok || "").trim().toUpperCase()
-          const isGlobal = (rawBlok === "" || rawBlok === "TANPA LOKASI")
-          let lokasi = isGlobal ? "Tanpa Lokasi" : rawBlok
+          let lokasi = (rawBlok === "" || rawBlok === "TANPA LOKASI") ? "Tanpa Lokasi" : rawBlok
 
           if (l.tipe === 'MASUK') {
             totalStok += q
@@ -68,26 +70,19 @@ export function useStok() {
             bloksTemp[lokasi] = (bloksTemp[lokasi] || 0) - q
           } 
           else if (l.tipe === 'OPNAME') {
-            if (isGlobal) {
-              // KIAMAT GLOBAL: RESET TOTAL STOK & HAPUS SEMUA BLOK
-              totalStok = q
-              for (let key in bloksTemp) delete bloksTemp[key] 
-              if (q > 0) bloksTemp["Tanpa Lokasi"] = q
-            } else {
-              // OPNAME SPESIFIK RAK TERTENTU
-              const stokBlokLama = parseFloat(bloksTemp[lokasi] || 0)
-              const selisih = q - stokBlokLama
-              totalStok += selisih
-              bloksTemp[lokasi] = q
-            }
+            // MATEMATIKA NORMAL: Opname cuma merubah stok di RAK ITU SAJA, rak lain AMAN!
+            const stokBlokLama = parseFloat(bloksTemp[lokasi] || 0)
+            const selisih = q - stokBlokLama
+            totalStok += selisih
+            bloksTemp[lokasi] = q
           }
           
           updates[`riwayat_transaksi/${parentId}/${l.trxId}/stokAkhir`] = parseFloat(totalStok.toFixed(2))
         })
 
-        // Sapu bersih pecahan debu desimal
+        // Sapu bersih pecahan debu desimal JS
         Object.keys(bloksTemp).forEach(b => {
-          if (bloksTemp[b] <= 0.001) {
+          if (Math.abs(bloksTemp[b]) <= 0.001) {
             delete bloksTemp[b]
           } else {
             bloksTemp[b] = parseFloat(bloksTemp[b].toFixed(2))
@@ -99,7 +94,7 @@ export function useStok() {
       })
 
       await update(dbRef(db), updates)
-      console.log("Audit Selesai. Opname Global dieksekusi penuh.")
+      console.log("Audit Selesai. Data kembali utuh.")
     } catch (e) {
       console.error("Audit Gagal:", e)
     } finally {
@@ -115,8 +110,7 @@ export function useStok() {
     const bloks = { ...(item.bloks || {}) }
     
     const rawBlok = (lokasiBaru || "").trim().toUpperCase()
-    const isGlobal = (rawBlok === "" || rawBlok === "TANPA LOKASI")
-    let blokNama = isGlobal ? "Tanpa Lokasi" : rawBlok
+    let blokNama = (rawBlok === "" || rawBlok === "TANPA LOKASI") ? "Tanpa Lokasi" : rawBlok
 
     let stokBlokLama = parseFloat(bloks[blokNama] || 0)
     let sBaru = sLama
@@ -130,21 +124,15 @@ export function useStok() {
       bloks[blokNama] = stokBlokLama - qty
     } 
     else if (tipe === 'OPNAME') {
-      if (isGlobal) {
-        sBaru = qty
-        for (let key in bloks) delete bloks[key]
-        if (qty > 0) bloks["Tanpa Lokasi"] = qty
-      } else {
-        const selisih = qty - stokBlokLama
-        sBaru = sLama + selisih
-        bloks[blokNama] = qty
-      }
+      const selisih = qty - stokBlokLama
+      sBaru = sLama + selisih
+      bloks[blokNama] = qty
     }
 
     sBaru = parseFloat(sBaru.toFixed(2))
     
     Object.keys(bloks).forEach(b => {
-      if (bloks[b] <= 0.001) delete bloks[b]
+      if (Math.abs(bloks[b]) <= 0.001) delete bloks[b]
       else bloks[b] = parseFloat(bloks[b].toFixed(2))
     })
 
