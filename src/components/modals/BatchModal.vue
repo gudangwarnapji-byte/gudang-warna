@@ -92,7 +92,7 @@
                     <tr v-for="(row, idx) in rows" :key="idx" :class="row.itemId ? '' : 'row-warning'">
                       <td class="text-center fw-bold" style="color:var(--text-muted)">{{ idx + 1 }}</td>
 
-                      <td style="position:relative">
+                      <td :style="{ position: 'relative', zIndex: activeDrop === idx ? 9999 : 1 }">
                         <input
                           class="form-control form-control-sm fw-bold custom-input table-input"
                           v-model="row.rawKey"
@@ -529,8 +529,14 @@ const submit = async () => {
 .custom-input:focus { border-color: #818cf8; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); outline: none; }
 .custom-addon { background: var(--bg-main); color: var(--text-muted); border: 1px solid var(--border-color); }
 
-.table-container { border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); }
+/* PERBAIKAN CSS 1: Hapus overflow: hidden agar dropdown tidak terpotong */
+.table-container { border-radius: 12px; border: 1px solid var(--border-color); overflow: visible; }
+
 .modern-table th { background: var(--bg-main); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border-color); padding: 12px 8px; }
+/* Agar pojokan header tumpul */
+.modern-table th:first-child { border-top-left-radius: 12px; }
+.modern-table th:last-child { border-top-right-radius: 12px; }
+
 .modern-table td { background: var(--bg-card); border-bottom: 1px solid var(--border-color); vertical-align: middle; padding: 8px;}
 .row-warning td { background: rgba(245, 158, 11, 0.05); }
 
@@ -542,12 +548,20 @@ const submit = async () => {
 
 .status-indicator { font-size: 0.65rem; font-weight: 600; }
 
+/* PERBAIKAN CSS 2: Tambahkan scrollbar halus dan overscroll-behavior */
 .ac-dropdown-new {
   position: absolute; top: calc(100% + 2px); left: 0; right: 0;
   background: var(--bg-card); border: 1px solid #818cf8;
-  border-radius: 8px; z-index: 1050; max-height: 200px; overflow-y: auto;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  border-radius: 8px; z-index: 9999; max-height: 200px; overflow-y: auto;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
+.ac-dropdown-new::-webkit-scrollbar { width: 6px; }
+.ac-dropdown-new::-webkit-scrollbar-track { background: transparent; }
+.ac-dropdown-new::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 10px; }
+.ac-dropdown-new::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.7); }
+
 .ac-item-new {
   padding: 8px 12px; cursor: pointer; font-size: 0.8rem;
   border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px;
