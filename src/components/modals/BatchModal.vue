@@ -15,8 +15,8 @@
           <button type="button" class="btn-close btn-close-custom" @click="$emit('close')"></button>
         </div>
 
-        <div class="modal-body p-4 pt-3">
-          <div class="row g-4">
+        <div class="modal-body p-4 pt-3" style="max-height:70vh;overflow-y:auto; overflow-x:hidden;">
+          <div class="row g-4" style="padding-bottom: 40px;">
 
             <div class="col-12">
               <label class="fw-bold mb-2 section-label">
@@ -77,7 +77,7 @@
             <div class="col-12 mt-2">
               <div class="table-container shadow-sm">
                 <table class="table modern-table mb-0">
-                  <thead class="sticky-top">
+                  <thead class="sticky-top" style="z-index: 10;">
                     <tr>
                       <th style="width:4%">#</th>
                       <th style="width:36%">KODE / NAMA BARANG</th>
@@ -106,7 +106,9 @@
                           @keydown.enter.prevent="pilihSuggestion(idx)"
                           @keydown.escape="activeDrop = -1"
                         >
-                        <div v-if="activeDrop === idx && suggestions[idx]?.length" class="ac-dropdown-new">
+                        <div v-if="activeDrop === idx && suggestions[idx]?.length" 
+                             class="ac-dropdown-new"
+                             :class="(idx >= rows.length - 2 && rows.length > 2) ? 'drop-up' : ''">
                           <div
                             v-for="(sug, si) in suggestions[idx]"
                             :key="sug.idUnik"
@@ -311,7 +313,8 @@ const onFocus = idx => {
 }
 
 const onBlur = idx => {
-  setTimeout(() => { if (activeDrop.value === idx) activeDrop.value = -1 }, 150)
+  // Ditambah delay sedikit agar klik mouse pada item dropdown tidak langsung tertutup
+  setTimeout(() => { if (activeDrop.value === idx) activeDrop.value = -1 }, 180)
 }
 
 const moveDown = idx => {
@@ -529,11 +532,9 @@ const submit = async () => {
 .custom-input:focus { border-color: #818cf8; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); outline: none; }
 .custom-addon { background: var(--bg-main); color: var(--text-muted); border: 1px solid var(--border-color); }
 
-/* PERBAIKAN CSS 1: Hapus overflow: hidden agar dropdown tidak terpotong */
 .table-container { border-radius: 12px; border: 1px solid var(--border-color); overflow: visible; }
 
 .modern-table th { background: var(--bg-main); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border-color); padding: 12px 8px; }
-/* Agar pojokan header tumpul */
 .modern-table th:first-child { border-top-left-radius: 12px; }
 .modern-table th:last-child { border-top-right-radius: 12px; }
 
@@ -548,7 +549,6 @@ const submit = async () => {
 
 .status-indicator { font-size: 0.65rem; font-weight: 600; }
 
-/* PERBAIKAN CSS 2: Tambahkan scrollbar halus dan overscroll-behavior */
 .ac-dropdown-new {
   position: absolute; top: calc(100% + 2px); left: 0; right: 0;
   background: var(--bg-card); border: 1px solid #818cf8;
@@ -557,6 +557,14 @@ const submit = async () => {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+/* PERBAIKAN: CSS KHUSUS UNTUK DROPDOWN YANG NAIK KE ATAS (DROP-UP) */
+.ac-dropdown-new.drop-up {
+  top: auto; 
+  bottom: calc(100% + 4px); /* Muncul ke atas input */
+  box-shadow: 0 -10px 25px -5px rgba(0,0,0,0.2);
+}
+
 .ac-dropdown-new::-webkit-scrollbar { width: 6px; }
 .ac-dropdown-new::-webkit-scrollbar-track { background: transparent; }
 .ac-dropdown-new::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 10px; }
