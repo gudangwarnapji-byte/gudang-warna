@@ -1,59 +1,51 @@
 <template>
-  <nav class="navbar navbar-dark mb-2">
-    <div class="container d-flex flex-nowrap align-items-center" style="gap: 15px;">
+  <nav class="navbar modern-navbar sticky-top mx-2 mt-2 px-3 py-2">
+    <div class="container-fluid d-flex flex-nowrap align-items-center justify-content-between" style="gap: 15px;">
 
       <a class="navbar-brand d-flex align-items-center gap-2 m-0 flex-shrink-0" href="#" style="padding:0;">
-        <img src="https://cdn-icons-png.flaticon.com/512/17167/17167932.png"
-             alt="Logo" style="height:38px">
+        <div class="logo-box">
+          <img src="https://cdn-icons-png.flaticon.com/512/17167/17167932.png" alt="Logo">
+        </div>
         <div class="d-flex flex-column justify-content-center">
-          <div class="fw-bold" style="font-size:1.15rem;line-height:.9;letter-spacing:-.5px">
-            GUDANG <span class="text-info">WARNA</span>
-          </div>
-          <div style="font-size:.65rem;opacity:.8">
-            {{ isAdmin ? 'Administrator' : 'Monitoring Sistem' }}
-          </div>
+          <div class="brand-title">GUDANG <span class="brand-accent">WARNA</span></div>
+          <div class="brand-subtitle">{{ isAdmin ? 'Administrator Panel' : 'Monitoring Sistem' }}</div>
         </div>
       </a>
 
       <div class="d-flex align-items-center gap-2 overflow-x-auto flex-nowrap py-1 swipe-menu w-100 justify-content-md-end">
 
         <template v-if="isAdmin">
-          <button class="btn btn-sm btn-success fw-bold rounded-pill px-3 shadow-sm flex-shrink-0"
-                  @click="bukaAddModal">
-            <i class="fas fa-plus-circle me-1"></i> Barang
+          <button class="btn btn-action-nav btn-add flex-shrink-0" @click="bukaAddModal">
+            <i class="fas fa-plus me-1"></i> Baru
           </button>
-          <button class="btn btn-sm btn-primary fw-bold shadow-sm flex-shrink-0"
-                  style="border-radius:8px" @click="bukaBatch" title="Input Massal Excel">
-            <i class="fas fa-paste"></i>
+          
+          <div class="divider-vertical"></div>
+
+          <button class="btn btn-icon-nav flex-shrink-0" @click="bukaBatch" title="Input Massal Excel">
+            <i class="fas fa-file-import text-primary"></i>
           </button>
-          <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm flex-shrink-0"
-                  style="border-radius:8px" @click="konfirmasiAudit" title="Audit Ulang Total Stok">
-            <i class="fas fa-wrench"></i>
+          <button class="btn btn-icon-nav flex-shrink-0" @click="konfirmasiAudit" title="Audit Ulang Total Stok">
+            <i class="fas fa-wrench text-warning"></i>
           </button>
-          <button class="btn btn-sm btn-light text-primary fw-bold shadow-sm flex-shrink-0"
-                  style="border-radius:8px" @click="konfirmasiAutoFix" title="Auto-Fix Kategori">
-            <i class="fas fa-magic"></i>
+          <button class="btn btn-icon-nav flex-shrink-0" @click="konfirmasiAutoFix" title="Auto-Fix Kategori">
+            <i class="fas fa-magic text-info"></i>
           </button>
-          <button class="btn btn-sm btn-success shadow-sm flex-shrink-0"
-                  style="border-radius:8px" @click="exportStok" title="Export Master Stok">
-            <i class="fas fa-file-excel"></i>
+          <button class="btn btn-icon-nav flex-shrink-0" @click="exportStok" title="Export Master Stok">
+            <i class="fas fa-file-excel text-success"></i>
           </button>
-          <button class="btn btn-sm btn-dark fw-bold shadow-sm flex-shrink-0"
-                  style="border-radius:8px" @click="bukaSelisih"
-                  title="Cek Selisih vs ERP">
-            <i class="fas fa-balance-scale"></i>
+          <button class="btn btn-icon-nav flex-shrink-0" @click="bukaSelisih" title="Cek Selisih vs ERP">
+            <i class="fas fa-balance-scale text-dark"></i>
           </button>
         </template>
 
-        <button class="btn btn-sm btn-info text-white fw-bold rounded-pill px-3 shadow-sm flex-shrink-0"
-                @click="showLaporan = true">
-          <i class="fas fa-folder-open me-1"></i> Laporan
+        <div class="divider-vertical"></div>
+
+        <button class="btn btn-action-nav btn-report flex-shrink-0" @click="showLaporan = true">
+          <i class="fas fa-chart-pie me-1"></i> Laporan
         </button>
 
-        <img v-if="user?.photoURL" :src="user.photoURL" class="user-avatar flex-shrink-0 ms-1">
-        <button class="btn btn-sm btn-danger rounded-circle flex-shrink-0"
-                style="width:32px;height:32px;padding:0"
-                @click="doLogout">
+        <img v-if="user?.photoURL" :src="user.photoURL" class="user-avatar flex-shrink-0 ms-2">
+        <button class="btn btn-logout flex-shrink-0" @click="doLogout" title="Logout">
           <i class="fas fa-power-off"></i>
         </button>
       </div>
@@ -61,31 +53,35 @@
     </div>
 
     <div v-if="showLaporan">
-      <div class="position-fixed top-0 start-0 w-100 h-100" 
-           style="background: rgba(0,0,0,0.1); z-index: 1040;" 
-           @click="showLaporan = false"></div>
+      <div class="position-fixed top-0 start-0 w-100 h-100 backdrop-blur" @click="showLaporan = false"></div>
       
-      <ul class="dropdown-menu show border-0 shadow-lg d-block" 
-          style="position: fixed; top: 65px; right: 15px; z-index: 1050; border-radius:12px; font-size:.9rem; min-width: 220px;">
-        <li><h6 class="dropdown-header fw-bold text-primary text-center">PILIH LAPORAN</h6></li>
-        <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaDaily)">
-          <i class="fas fa-calendar-day text-info" style="width:24px;text-align:center"></i> Rekap Harian
-        </a></li>
-        <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaMutasi)">
-          <i class="fas fa-exchange-alt text-success" style="width:24px;text-align:center"></i> Laporan Mutasi
-        </a></li>
-        <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaBulanan)">
-          <i class="fas fa-calendar-alt" style="color:#6f42c1;width:24px;text-align:center"></i> Arus Bulanan
-        </a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaSuratJalan)">
-          <i class="fas fa-file-pdf text-danger" style="width:24px;text-align:center"></i> Surat Jalan PDF
-        </a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item fw-bold py-2" href="#" @click.prevent="bukaLaporan(bukaBlok)">
-          <i class="fas fa-th-large text-primary" style="width:24px;text-align:center"></i> Peta Blok
-        </a></li>
-      </ul>
+      <div class="modern-dropdown show">
+        <div class="dropdown-header-custom">Menu Laporan</div>
+        <div class="dropdown-body">
+          <a class="dropdown-item-custom" href="#" @click.prevent="bukaLaporan(bukaDaily)">
+            <div class="icon-box bg-info-subtle text-info"><i class="fas fa-calendar-day"></i></div>
+            <div class="item-text">Rekap Harian</div>
+          </a>
+          <a class="dropdown-item-custom" href="#" @click.prevent="bukaLaporan(bukaMutasi)">
+            <div class="icon-box bg-success-subtle text-success"><i class="fas fa-exchange-alt"></i></div>
+            <div class="item-text">Laporan Mutasi</div>
+          </a>
+          <a class="dropdown-item-custom" href="#" @click.prevent="bukaLaporan(bukaBulanan)">
+            <div class="icon-box bg-primary-subtle text-primary"><i class="fas fa-calendar-alt"></i></div>
+            <div class="item-text">Arus Bulanan</div>
+          </a>
+          <div class="dropdown-divider-custom"></div>
+          <a class="dropdown-item-custom" href="#" @click.prevent="bukaLaporan(bukaSuratJalan)">
+            <div class="icon-box bg-danger-subtle text-danger"><i class="fas fa-file-pdf"></i></div>
+            <div class="item-text">Surat Jalan PDF</div>
+          </a>
+          <div class="dropdown-divider-custom"></div>
+          <a class="dropdown-item-custom" href="#" @click.prevent="bukaLaporan(bukaBlok)">
+            <div class="icon-box bg-warning-subtle text-warning"><i class="fas fa-th-large"></i></div>
+            <div class="item-text">Peta Blok Visual</div>
+          </a>
+        </div>
+      </div>
     </div>
 
   </nav>
@@ -107,7 +103,6 @@ import { useSuratJalan } from '../composables/useSuratJalan'
 import { useBlok } from '../composables/useBlok'
 
 const { doLogout }     = useAuth()
-// IMPORT JALANKANAUDIT DARI USESTOK!
 const { refreshData, jalankanAudit } = useStok() 
 const { bukaDaily }    = useDaily()
 const { bukaMutasi }   = useMutasi()
@@ -134,19 +129,15 @@ const getTipeGrade = kode => {
   return { tipe, grade }
 }
 
-// FUNGSI KONFIRMASI YANG LANGSUNG MANGGIL FUNGSI DARI useStok.js
 const konfirmasiAudit = () => {
   window.Swal.fire({
     title: 'Audit Global?',
     html: 'Sistem akan menghitung ulang stok <b>SEMUA BARANG</b> dari nol.',
-    icon: 'warning', showCancelButton: true, confirmButtonColor: '#1e3c72'
+    icon: 'warning', showCancelButton: true, confirmButtonColor: '#4f46e5'
   }).then(async r => { 
     if (r.isConfirmed) {
       window.Swal.fire({ title: 'Menghitung Ulang...', allowOutsideClick: false, didOpen: () => window.Swal.showLoading() })
-      
-      // Panggil fungsi yang benar dari useStok.js
       await jalankanAudit() 
-      
       window.Swal.fire('Selesai!', 'Audit berhasil. Data sudah bersih.', 'success')
       refreshData()
     } 
@@ -157,7 +148,7 @@ const konfirmasiAutoFix = () => {
   window.Swal.fire({
     title: 'Auto-Fix Data?',
     html: 'Update <b>TIPE</b> dan <b>GRADE</b> berdasarkan Kode ERP.',
-    icon: 'warning', showCancelButton: true, confirmButtonColor: '#1e3c72'
+    icon: 'warning', showCancelButton: true, confirmButtonColor: '#4f46e5'
   }).then(r => { if (r.isConfirmed) jalankanAutoFix() })
 }
 
@@ -193,22 +184,102 @@ const exportStok = () => {
 </script>
 
 <style scoped>
-.navbar {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
-  padding: .8rem 0;
-}
-.user-avatar {
-  width: 32px; height: 32px; border-radius: 50%;
-  border: 2px solid #fff;
+/* NAVBAR FLOATING STYLE */
+.modern-navbar {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  z-index: 1020;
 }
 
-/* CSS Khusus Swipeable Menu HP */
-.swipe-menu {
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; 
+/* LOGO & BRANDING */
+.logo-box {
+  width: 40px; height: 40px;
+  background: #f8fafc;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
 }
-.swipe-menu::-webkit-scrollbar {
-  display: none; 
+.logo-box img { height: 26px; }
+.brand-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.1rem; font-weight: 800; color: #0f172a; line-height: 1; letter-spacing: -0.5px;
 }
+.brand-accent { color: #4f46e5; }
+.brand-subtitle {
+  font-size: 0.65rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* BUTTONS */
+.btn-action-nav {
+  padding: 8px 16px; border-radius: 10px; font-weight: 600; font-size: 0.85rem; border: none; transition: all 0.2s;
+}
+.btn-add { background: #4f46e5; color: #fff; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); }
+.btn-add:hover { background: #4338ca; transform: translateY(-1px); }
+
+.btn-report { background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; }
+.btn-report:hover { background: #e2e8f0; }
+
+.btn-icon-nav {
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid transparent;
+  background: #f8fafc; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; font-size: 0.9rem; padding: 0;
+}
+.btn-icon-nav:hover { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transform: translateY(-1px); }
+
+.btn-logout {
+  width: 36px; height: 36px; border-radius: 10px; border: none;
+  background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+}
+.btn-logout:hover { background: #fee2e2; }
+
+.divider-vertical { width: 1px; height: 24px; background-color: #e2e8f0; margin: 0 4px; }
+.user-avatar { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; border: 2px solid #e2e8f0; }
+
+/* SWIPE MENU (MOBILE) */
+.swipe-menu { -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.swipe-menu::-webkit-scrollbar { display: none; }
+
+/* DROPDOWN MENU MODERN */
+.backdrop-blur { background: rgba(15, 23, 42, 0.2); backdrop-filter: blur(2px); z-index: 1040; }
+.modern-dropdown {
+  position: fixed; top: 70px; right: 20px; z-index: 1050; width: 260px;
+  background: #ffffff; border-radius: 16px; padding: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+  border: 1px solid #f1f5f9; animation: slideDown 0.2s ease-out;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-header-custom {
+  font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 10px 12px;
+}
+.dropdown-item-custom {
+  display: flex; align-items: center; padding: 10px 12px; gap: 12px;
+  border-radius: 10px; text-decoration: none; color: #334155; transition: all 0.2s;
+}
+.dropdown-item-custom:hover { background: #f8fafc; color: #0f172a; }
+.icon-box {
+  width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+}
+.item-text { font-weight: 600; font-size: 0.9rem; }
+.dropdown-divider-custom { height: 1px; background: #f1f5f9; margin: 6px 12px; }
+
+/* Warna Halus untuk Icon Box */
+.bg-info-subtle { background-color: #e0f2fe; }
+.text-info { color: #0284c7 !important; }
+.bg-success-subtle { background-color: #d1fae5; }
+.text-success { color: #059669 !important; }
+.bg-primary-subtle { background-color: #e0e7ff; }
+.text-primary { color: #4f46e5 !important; }
+.bg-danger-subtle { background-color: #fee2e2; }
+.text-danger { color: #dc2626 !important; }
+.bg-warning-subtle { background-color: #fef3c7; }
+.text-warning { color: #d97706 !important; }
 </style>
