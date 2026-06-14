@@ -12,7 +12,7 @@
         v-model="searchQuery"
       >
       <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">
-        <i class="fas fa-times-circle"></i>
+        <i class="fas fa-times"></i>
       </button>
     </div>
 
@@ -22,7 +22,7 @@
         @click="togglePanel"
       >
         <span class="d-flex align-items-center">
-          <i class="fas fa-sliders-h me-2 text-primary" style="font-size:0.9rem"></i>
+          <i class="fas fa-filter me-2 text-primary" style="font-size:0.9rem"></i>
           <span class="fw-medium">Filter Data:</span> 
           <b class="ms-1" style="font-weight:700">{{ filterSummary }}</b>
         </span>
@@ -79,7 +79,7 @@
             class="btn btn-sm btn-reset text-danger fw-bold"
             @click="resetFilter"
           >
-            <i class="fas fa-undo-alt me-1"></i> Reset
+            <i class="fas fa-sync-alt me-1"></i> Reset
           </button>
         </div>
       </div>
@@ -88,14 +88,14 @@
     <div class="d-flex justify-content-between mt-3 px-2 align-items-center flex-wrap gap-2 pb-2">
       <div class="d-flex align-items-center gap-2">
         <div class="stat-badge">
-          <i class="fas fa-box-open text-primary me-1"></i> {{ filteredItems.length }} Item Ditampilkan
+          <i class="fas fa-cubes text-primary me-1"></i> {{ filteredItems.length }} Item Ditampilkan
         </div>
       </div>
       <div v-if="kritisList.length > 0 && !filterStokKritis" 
            class="badge-soft-danger cursor-pointer px-2 py-1 rounded shadow-sm"
            style="font-size:0.75rem; font-weight:700; cursor:pointer;"
            @click="toggleStokKritis">
-        <i class="fas fa-exclamation-circle me-1"></i> {{ kritisList.length }} Kritis
+        <i class="fas fa-exclamation-triangle me-1"></i> {{ kritisList.length }} Kritis
       </div>
     </div>
   </div>
@@ -158,7 +158,6 @@ const getGradeClass = g => {
   border-bottom: 1px solid rgba(226, 232, 240, 0.8);
 }
 
-/* SEARCH BAR MODERN */
 .search-container {
   display: flex;
   align-items: center;
@@ -195,7 +194,6 @@ const getGradeClass = g => {
 }
 .clear-btn:hover { color: #ef4444; }
 
-/* FILTER TOGGLE MODERN */
 .filter-toggle-btn {
   width: 100%; padding: 12px 16px; background: #ffffff;
   border: 1px solid #e2e8f0; border-radius: 12px;
@@ -213,7 +211,6 @@ const getGradeClass = g => {
 .filter-toggle-btn .chevron { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .filter-toggle-btn.open .chevron { transform: rotate(-180deg); color: #4f46e5; }
 
-/* FILTER PANEL */
 .filter-collapse { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .filter-collapse.open { max-height: 500px; }
 .filter-inner {
@@ -228,7 +225,6 @@ const getGradeClass = g => {
   text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;
 }
 
-/* FILTER CHIPS (SOFT PALETTE) */
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .f-chip {
   display: inline-flex; align-items: center; padding: 6px 14px;
@@ -243,7 +239,6 @@ const getGradeClass = g => {
 .chip-critical-inactive:hover { background: #fee2e2; }
 .chip-critical-active { background: #dc2626; color: #ffffff; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2); }
 
-/* FOOTER PANEL */
 .filter-footer {
   display: flex; justify-content: space-between; align-items: center;
   border-top: 1px solid #f1f5f9;
@@ -251,7 +246,6 @@ const getGradeClass = g => {
 .btn-reset { padding: 4px 8px; border-radius: 6px; }
 .btn-reset:hover { background: #fef2f2; }
 
-/* STATS BADGES */
 .stat-badge {
   font-size: 0.8rem; font-weight: 700; color: #475569;
   background: #ffffff; padding: 6px 12px; border-radius: 8px;
