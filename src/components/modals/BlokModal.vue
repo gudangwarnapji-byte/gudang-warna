@@ -202,7 +202,7 @@
               <div class="blok-card shadow-sm" style="border-color: #fcd34d !important;"
                    :class="activeBlok === '__TANPALOKASI__' ? 'blok-active-warning' : ''"
                    @click="toggleBlok('__TANPALOKASI__')">
-                <div class="blok-header" style="background: linear-gradient(135deg, #d97706, #f59e0b);">
+                <div class="blok-header" style="background: linear-gradient(135deg, #d97706, #f59e0b); color: #fff;">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
                       <h6 class="fw-bold mb-1 d-flex align-items-center gap-2">
@@ -405,13 +405,16 @@ const simpanStokBlok = async (item, blokNama) => {
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
+/* PERBAIKAN DI SINI: Menyeleraskan pemanggilan parameter dengan useStok.js */
 const pindahBlok = async (item, blokAsal, blokTujuan) => {
   if (!blokTujuan) return
   try {
     const bloks      = { ...(item.bloks || {}) }
     const stokPindah = parseFloat(bloks[blokAsal] || 0)
     if (stokPindah <= 0) return
-    await kirimMutasi(item.idUnik, stokPindah, '', blokAsal, blokTujuan)
+    
+    // Perbaikan: Di useStok.js strukturnya -> idUnik, qty, blokAsal, blokTujuan
+    await kirimMutasi(item.idUnik, stokPindah, blokAsal, blokTujuan)
 
     window.Swal.fire({
       icon: 'success', title: `Dipindah ke Blok ${blokTujuan}`,
@@ -420,6 +423,7 @@ const pindahBlok = async (item, blokAsal, blokTujuan) => {
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
+/* PERBAIKAN DI SINI: Menghapus argumen 'DITARIK' yang menggeser urutan parameter */
 const hapusDariBlok = async (item, blokNama) => {
   const result = await window.Swal.fire({
     title: 'Hapus dari Blok?',
@@ -430,7 +434,9 @@ const hapusDariBlok = async (item, blokNama) => {
   try {
     const bloks = { ...(item.bloks || {}) }
     const stokHapus = parseFloat(bloks[blokNama] || 0)
-    await kirimMutasi(item.idUnik, stokHapus, 'DITARIK', blokNama, 'Tanpa Lokasi')
+    
+    // Perbaikan: Di useStok.js strukturnya -> idUnik, qty, blokAsal, blokTujuan
+    await kirimMutasi(item.idUnik, stokHapus, blokNama, 'Tanpa Lokasi')
   } catch(e) { window.Swal.fire('Error', e.message, 'error') }
 }
 
@@ -458,6 +464,7 @@ const pilihAssignItem = (item) => {
   assignDrop.value      = false
 }
 
+/* PERBAIKAN DI SINI: Menghapus parameter 'ALOKASI' agar urutan parameter sesuai */
 const simpanAssignKeBlok = async (blokNama) => {
   if (!assignItemPilih.value) {
     window.Swal.fire('Peringatan', 'Pilih item dulu.', 'warning'); return
@@ -469,7 +476,9 @@ const simpanAssignKeBlok = async (blokNama) => {
   
   try {
     const item = assignItemPilih.value
-    await kirimMutasi(item.idUnik, stokMutasi, 'ALOKASI', 'Tanpa Lokasi', blokNama)
+    
+    // Perbaikan: Di useStok.js strukturnya -> idUnik, qty, blokAsal, blokTujuan
+    await kirimMutasi(item.idUnik, stokMutasi, 'Tanpa Lokasi', blokNama)
 
     assigningToBlok.value = ''
     assignRawKey.value    = ''
@@ -488,6 +497,7 @@ const bukaAssignTanpaLok = (item) => {
   assignStokTanpaLok.value = item.sisaTanpaBlok 
 }
 
+/* PERBAIKAN DI SINI: Menghapus parameter 'ALOKASI' agar urutan parameter sesuai */
 const simpanAssignTanpaLok = async (item) => {
   if (!assignBlokNama.value) {
     window.Swal.fire('Peringatan', 'Pilih blok dulu.', 'warning'); return
@@ -498,7 +508,8 @@ const simpanAssignTanpaLok = async (item) => {
   }
 
   try {
-    await kirimMutasi(item.idUnik, stokMutasi, 'ALOKASI', 'Tanpa Lokasi', assignBlokNama.value)
+    // Perbaikan: Di useStok.js strukturnya -> idUnik, qty, blokAsal, blokTujuan
+    await kirimMutasi(item.idUnik, stokMutasi, 'Tanpa Lokasi', assignBlokNama.value)
 
     assigningItem.value      = ''
     assignBlokNama.value     = ''
